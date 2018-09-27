@@ -86,7 +86,7 @@ def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
         pixel_indices = nnhealpix.map_ordering.dgrade(nside_in, nside_out)
     def f(x):
         y = OrderMap(pixel_indices)(x)
-        kernel_size = (nside_in/nside_out)**2.
+        kernel_size = int((nside_in/nside_out)**2.)
         y = keras.layers.Conv1D(
             filters, kernel_size=kernel_size, strides=kernel_size,
             use_bias=use_bias, trainable=trainable)(y)
@@ -158,9 +158,9 @@ def ResConvNeighbours(
         y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
         y = keras.layers.Activation('relu')(y)
         y = ConvNeighbours(
-            nside, kernel_size, filters, use_bias=use_bias, trainable=trainable)(x)
+            nside, kernel_size, filters, use_bias=use_bias, trainable=trainable)(y)
         y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
         y = keras.layers.Add()([y, shortcut])
         y = keras.layers.Activation('relu')(y)
         return y
-return f
+    return f

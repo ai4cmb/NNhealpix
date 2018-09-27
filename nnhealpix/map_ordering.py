@@ -71,22 +71,21 @@ def pixel_first_neighbours(ipix, nside):
     return pix_num
 
 def filter9(nside):
-        """ map ordering to implement a convolutional neural network with a
-        kernel convolving the first neighbour of each pixel on an healpix map
+    """ map ordering to implement a convolutional neural network with a
+    kernel convolving the first neighbour of each pixel on an healpix map
 
-        Parameters
-        ----------
-        nside: integer
-            Nside parameter for the input map.
-            Must be a valid healpix Nside value
+    Parameters
+    ----------
+    nside: integer
+        Nside parameter for the input map.
+        Must be a valid healpix Nside value
 
-        Returns
-        -------
-        filter9 : array
-            array defining the re-ordering of the input map to perform the
-            convolution
-
-        """
+    Returns
+    -------
+    filter9 : array
+        array defining the re-ordering of the input map to perform the
+        convolution
+    """
 
     if hp.isnsideok(nside, nest=True)==False:
         raise ValueError('nside is not valid')
@@ -135,15 +134,15 @@ def read_filter9(nside):
     return indices
 
 def read_dgrade(nside_in, nside_out):
-        """ reads from disk the ordering array to perform the down grade of
-        an healpix map
+    """ reads from disk the ordering array to perform the down grade of
+    an healpix map
 
-        Parameters
-        ----------
-        nside_in, nside_out: integers
-            Nsides parameters for which the ordering must be retrieved.
-            Must be valid healpix Nside values
-        """
+    Parameters
+    ----------
+    nside_in, nside_out: integers
+        Nsides parameters for which the ordering must be retrieved.
+        Must be valid healpix Nside values
+    """
 
     file_in = os.path.join(
         os.path.dirname(__file__),
