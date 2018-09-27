@@ -9,6 +9,10 @@ import nnhealpix.map_ordering
 
 
 class OrderMap(Layer):
+    """ defines the keras layer that reorders the inputs map to then perfrom
+    convolution on them
+    """
+
     def __init__(self, indices, **kwargs):
         Kindices = K.variable(indices, dtype='int32')
         self.indices = Kindices
@@ -28,6 +32,18 @@ class OrderMap(Layer):
             input_shape[0], int(self.output_dim[1]), int(self.output_dim[2]))
 
 def Dgrade(nside_in, nside_out):
+    """ keras layer performing a down grade of input maps
+
+    Parameters
+    ----------
+    nside_in : integer
+        Nside parameter for the input maps.
+        Must be a valid healpix Nside value
+    nside_out: integer
+        Nside parameter for the output maps.
+        Must be a valid healpix Nside value
+    """
+
     file_in = os.path.join(
         os.path.dirname(__file__),
         '../ancillary_files/dgrade_from{}_to{}'.format(nside_in, nside_out))
@@ -43,6 +59,24 @@ def Dgrade(nside_in, nside_out):
     return f
 
 def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
+    """ keras layer performing a downgrade+convolution of input maps
+
+    Parameters
+    ----------
+    nside_in : integer
+        Nside parameter for the input maps.
+        Must be a valid healpix Nside value
+    nside_out: integer
+        Nside parameter for the output maps.
+        Must be a valid healpix Nside value
+    filters : integer
+        number of filters in the convolution
+    use_bias : bool (default is False)
+        whether the layer uses a bias vector
+    trainable : bool (default is True)
+        wheter this is a trainable layer
+    """
+
     file_in = os.path.join(
         os.path.dirname(__file__),
         '../ancillary_files/dgrade_from{}_to{}'.format(nside_in, nside_out))
@@ -60,6 +94,25 @@ def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
     return f
 
 def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
+    """ keras layer performing the pixel neighbour covolution
+
+    Parameters
+    ----------
+    nside : integer
+        Nside parameter for the input maps.
+        Must be a valid healpix Nside value
+    kernel_size: integer
+        dimension of the kernel.
+        Must be a valid number. For now only kernel_size=9 is admitted,
+        corresponding to the first neighbours convolution
+    filters : integer
+        number of filters in the convolution
+    use_bias : bool (default is False)
+        whether the layer uses a bias vector
+    trainable : bool (default is True)
+        wheter this is a trainable layer
+    """
+
     if kernel_size!=9:
         raise ValueError('kernel size must be 9')
     file_in = os.path.join(
