@@ -7,7 +7,6 @@ from keras.engine.topology import Layer
 import tensorflow as tf
 import nnhealpix.map_ordering
 
-
 class OrderMap(Layer):
     """ defines the keras layer that reorders the inputs map to then perfrom
     convolution on them
@@ -151,6 +150,7 @@ def ResConvNeighbours(
     trainable : bool (default is True)
         wheter this is a trainable layer
     """
+
     def f(x):
         shortcut = x
         y = ConvNeighbours(
