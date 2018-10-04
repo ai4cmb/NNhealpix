@@ -31,7 +31,7 @@ class OrderMap(Layer):
             input_shape[0], int(self.output_dim[1]), int(self.output_dim[2]))
 
 def Dgrade(nside_in, nside_out):
-    """ keras layer performing a down grade of input maps
+    """ keras layer performing a downgrade of input maps
 
     Parameters
     ----------
@@ -56,6 +56,34 @@ def Dgrade(nside_in, nside_out):
         y = keras.layers.AveragePooling1D(pool_size=pool_size)(y)
         return y
     return f
+
+def MaxPooling(nside_in, nside_out):
+        """ keras layer performing a downgrade+maxpooling of input maps
+
+        Parameters
+        ----------
+        nside_in : integer
+            Nside parameter for the input maps.
+            Must be a valid healpix Nside value
+        nside_out: integer
+            Nside parameter for the output maps.
+            Must be a valid healpix Nside value
+        """
+
+        file_in = os.path.join(
+            os.path.dirname(__file__),
+            '../ancillary_files/dgrade_from{}_to{}'.format(nside_in, nside_out))
+        try:
+            pixel_indices = np.load(file_in)
+        except:
+            pixel_indices = nnhealpix.map_ordering.dgrade(nside_in, nside_out)
+        def f(x):
+            y = OrderMap(pixel_indices)(x)
+            pool_size=int((nside_in/nside_out)**2.)
+            y = keras.layers.MaxPooling1D(pool_size=pool_size)(y)
+            return y
+        return f
+
 
 def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
     """ keras layer performing a downgrade+convolution of input maps
