@@ -3,6 +3,32 @@ import healpy as hp
 from scipy.interpolate import griddata
 
 def img2healpix(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
+    """projection of a 2D image on healpix map
+
+    Parameters
+    ----------
+    img: array-like
+        image to project, must have shape = (M, N)
+    nside: integer
+        Nside parameter for the output map.
+        Must be a valid healpix Nside value
+    thetac, phic: float
+        coordinate (in degrees) where to project the center of the image on the healpix map.
+        Must follow the healpix angle convention:
+        0 <= thetac <= 180    with 0 being the N and 180 the S Pole
+        0 <= phic <= 360      with 0 being at the center of the map, then it
+                              increases moving towards W
+    delta_theta, delta_phi: float
+        dimension of the projected image
+    rot: None
+        Not yet implemented!
+
+    Returns
+    -------
+    hp_map : array
+        output healpix map with the image projection
+    """
+    
     imgf = np.flip(img, axis=1)
     imgf = np.array(imgf)
     data = imgf.reshape(1, img.shape[0]*img.shape[1])
@@ -45,8 +71,8 @@ def img2healpix(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
     points[:,0] = img_theta
     points[:,1] = img_phi
     npix = hp.nside2npix(nside)
-    h_data = np.zeros((data.shape[0],npix),'d')
+    hp_map = np.zeros((data.shape[0],npix),'d')
     for i in range(data.shape[0]):
-        h_data[i,ipix] = griddata(
+        hp_map[i,ipix] = griddata(
             points, data[i,:], (pl_theta, pl_phi), method='nearest')
-    return h_data
+    return hp_map
