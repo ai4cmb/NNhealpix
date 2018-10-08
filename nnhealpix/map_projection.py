@@ -116,7 +116,7 @@ def img2healpix(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
     Parameters
     ----------
     img: array-like
-        image to project, must have shape = (M, N)
+        image to project, must have shape = (#img, M, N)
     nside: integer
         Nside parameter for the output map.
         Must be a valid healpix Nside value
@@ -136,12 +136,13 @@ def img2healpix(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
     hp_map : array
         output healpix map with the image projection
     """
-    
-    imgf = np.flip(img, axis=1)
+
+    imgf = np.flip(img, axis=2)
     imgf = np.array(imgf)
-    data = imgf.reshape(1, img.shape[0]*img.shape[1])
-    xsize = img.shape[0]
-    ysize = img.shape[1]
+    print(img.shape[1], img.shape[2])
+    data = imgf.reshape(img.shape[0], img.shape[1]*img.shape[2])
+    xsize = img.shape[1]
+    ysize = img.shape[2]
     theta_min = thetac-delta_theta/2.
     theta_max = thetac+delta_theta/2.
     phi_max = phic+delta_phi/2.
