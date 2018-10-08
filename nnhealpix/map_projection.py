@@ -1,6 +1,114 @@
 import numpy as np
 import healpy as hp
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, interp2d
+from scipy.ndimage.interpolation import zoom
+import nnhealpix._maptools as _m
+
+def img2map(
+        img,
+        resultmap,
+        resulthits,
+        delta_theta,
+        delta_phi,
+        rot=np.eye(3),
+):
+    """Projection of a 2D image on a Healpix map.
+
+    Parameters
+    ----------
+    img: A 2D matrix containing the image to be projected on the map
+    resultmap: A Healpix map where to project the image
+    resulthits: A Healpix map of the same side as `resultmap`, which
+                will store the hit count per pixel of `resultmap`
+    delta_theta: the width of the image along the meridian, in degrees
+    delta_phi: the height of the image along the meridian, in degrees
+    rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object
+
+    """
+
+    assert img.ndim == 2
+    assert len(resultmap) == len(resulthits)
+    assert delta_theta > 0.0
+    assert delta_phi > 0.0
+
+    nside = hp.npix2nside(len(resultmap))
+    
+    delta_theta, delta_phi = [np.deg2rad(x) for x in (delta_theta, delta_phi)]
+
+    if type(rot) is hp.rotator.Rotator:
+        rotmatr = rot.mat
+    else:
+        rotmatr = rot
+
+    # We fire a number of rays close enough not to miss pixels within
+    # the image frame. We use as a rule of thumb a spacing that is
+    # half the resolution of the map.
+    map_resolution = 0.5 * hp.nside2resol(nside, arcmin=False)
+    nx, ny = [max(1, int(span / map_resolution))
+              for span in (delta_phi, delta_theta)]
+    theta_proj = np.linspace(
+        (np.pi - delta_theta) / 2,
+        (np.pi + delta_theta) / 2,
+        nx,
+    )
+    phi_proj = np.linspace(
+        delta_phi / 2,
+        -delta_phi / 2,
+        ny,
+    )
+
+    # In order to fire so many rays, we need to interpolate between
+    # adjacent pixels in the image matrix
+    proj_img = zoom(img, (nx / img.shape[1], ny / img.shape[0]), order=0)
+
+    # This 2D mesh grid contains the direction of all the rays we're
+    # going to fire around position (θ=π/2, φ=0).
+    theta_proj, phi_proj = np.meshgrid(theta_proj, phi_proj)
+
+    # The shape of "dirs" is nx × ny × 3
+    dirs = hp.ang2vec(theta_proj, phi_proj)
+
+    # "rotdirs" has the same shape as "dirs". With this operation, we
+    # apply the rotation matrix to the rays around position (θ=π/2,
+    # φ=0).
+    rotdirs = np.tensordot(dirs, rotmatr, (2, 1))
+
+    # "theta" and "phi" are linear vectors
+    theta, phi = hp.vec2ang(np.reshape(rotdirs, (-1, 3)))
+    pixidx = hp.ang2pix(nside, theta, phi)
+
+    # Run a simple map-maker
+    _m.binned_map(np.ravel(proj_img), pixidx, resultmap, resulthits)
+
+    # We're returning nothing, as the result is in "resultmap" and
+    # "resulthits"
+
+
+def img2healpix2(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
+    """Projection of a 2D image on a Healpix map.
+
+    This function is a wrapper to `img2map`. Use the latter function
+    if you have already allocated a map.
+
+    Parameters
+    ----------
+    img: A 2D matrix containing the image to be projected on the map
+    nside: The resolution of the Healpix map
+    delta_theta: the width of the image along the meridian, in degrees
+    delta_phi: the height of the image along the meridian, in degrees
+    rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object
+    """
+
+    assert hp.isnsideok(nside)
+    assert delta_theta < 180.0
+    assert delta_phi < 180.0
+
+    result = np.zeros(hp.nside2npix(nside)) + hp.UNSEEN
+    hits = np.zeros(result.size, dtype='int')
+    img2map(img, result, hits, delta_theta, delta_phi, rot)
+    
+    return result, hits
+
 
 def img2healpix(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
     """projection of a 2D image on healpix map
