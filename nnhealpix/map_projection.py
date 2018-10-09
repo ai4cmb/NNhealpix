@@ -1,8 +1,39 @@
+# -*- encoding: utf-8 -*-
+
 import numpy as np
 import healpy as hp
-from scipy.interpolate import griddata, interp2d
+from scipy.interpolate import griddata
 from scipy.ndimage.interpolation import zoom
-import nnhealpix._maptools as _m
+import numba
+
+@numba.jit(nopython=True)
+def binned_map(signal, pixidx, mappixels, hits):
+    """Project a TOD onto a map.
+
+    Parameters
+    ----------
+    signal: A TOD containing the signal to be projected (1D vector)
+    pixidx: A TOD containing the index of the pixels (1D vector, same
+            length as `signal`)
+    mappixels: A Healpix map that will contain the projected signal
+    hits: A Healpix map of the same resolution as mappixels that will
+          contain the number of hits
+    """
+
+    assert len(mappixels) == len(hits)
+    assert len(signal) == len(pixidx)
+    
+    mappixels[:] = 0.0
+    hits[:] = 0
+    
+    for i in range(len(signal)):
+        mappixels[pixidx[i]] += signal[i]
+        hits[pixidx[i]] += 1
+    
+    for i in range(len(mappixels)):
+        if hits[i] > 0:
+            mappixels[i] /= hits[i]
+
 
 def img2map(
         img,
@@ -24,6 +55,10 @@ def img2map(
     delta_phi: the height of the image along the meridian, in degrees
     rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object
 
+    Result
+    ------
+    A tuple containing the map and the hit map. Unseen pixels in the map
+    are set to zero.
     """
 
     assert img.ndim == 2
@@ -78,7 +113,7 @@ def img2map(
     pixidx = hp.ang2pix(nside, theta, phi)
 
     # Run a simple map-maker
-    _m.binned_map(np.ravel(proj_img), pixidx, resultmap, resulthits)
+    binned_map(np.ravel(proj_img), pixidx, resultmap, resulthits)
 
     # We're returning nothing, as the result is in "resultmap" and
     # "resulthits"
@@ -97,6 +132,11 @@ def img2healpix2(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
     delta_theta: the width of the image along the meridian, in degrees
     delta_phi: the height of the image along the meridian, in degrees
     rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object
+
+    Result
+    ------
+    A tuple containing the map and the hit map. Unseen pixels in the map
+    are set to zero.
     """
 
     assert hp.isnsideok(nside)
