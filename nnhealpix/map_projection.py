@@ -22,14 +22,14 @@ def binned_map(signal, pixidx, mappixels, hits):
 
     assert len(mappixels) == len(hits)
     assert len(signal) == len(pixidx)
-    
+
     mappixels[:] = 0.0
     hits[:] = 0
-    
+
     for i in range(len(signal)):
         mappixels[pixidx[i]] += signal[i]
         hits[pixidx[i]] += 1
-    
+
     for i in range(len(mappixels)):
         if hits[i] > 0:
             mappixels[i] /= hits[i]
@@ -67,7 +67,7 @@ def img2map(
     assert delta_phi > 0.0
 
     nside = hp.npix2nside(len(resultmap))
-    
+
     delta_theta, delta_phi = [np.deg2rad(x) for x in (delta_theta, delta_phi)]
 
     if type(rot) is hp.rotator.Rotator:
@@ -119,7 +119,7 @@ def img2map(
     # "resulthits"
 
 
-def img2healpix2(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
+def img2healpix(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
     """Projection of a 2D image on a Healpix map.
 
     This function is a wrapper to `img2map`. Use the latter function
@@ -146,11 +146,11 @@ def img2healpix2(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
     result = np.zeros(hp.nside2npix(nside)) + hp.UNSEEN
     hits = np.zeros(result.size, dtype='int')
     img2map(img, result, hits, delta_theta, delta_phi, rot)
-    
+
     return result, hits
 
 
-def img2healpix(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
+def img2healpix_planar(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
     """projection of a 2D image on healpix map
 
     Parameters
