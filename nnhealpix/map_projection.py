@@ -7,7 +7,7 @@ from scipy.ndimage.interpolation import zoom
 import numba
 
 @numba.jit(nopython=True)
-def binned_map(signal, pixidx, mappixels, hits):
+def binned_map(signal, pixidx, mappixels, hits, reset_map=True):
     """Project a TOD onto a map.
 
     Parameters
@@ -22,9 +22,10 @@ def binned_map(signal, pixidx, mappixels, hits):
 
     assert len(mappixels) == len(hits)
     assert len(signal) == len(pixidx)
-    
-    mappixels[:] = 0.0
-    hits[:] = 0
+
+    if reset_map:
+        mappixels[:] = 0.0
+        hits[:] = 0
     
     for i in range(len(signal)):
         mappixels[pixidx[i]] += signal[i]
@@ -42,6 +43,7 @@ def img2map(
         delta_theta,
         delta_phi,
         rot=np.eye(3),
+        reset_map=True,
 ):
     """Projection of a 2D image on a Healpix map.
 
@@ -54,6 +56,8 @@ def img2map(
     delta_theta: the width of the image along the meridian, in degrees
     delta_phi: the height of the image along the meridian, in degrees
     rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object
+    reset_map: If True, both `resultmap` and `resulthits` will be zeroed
+               before doing the projection
 
     Result
     ------
@@ -143,9 +147,9 @@ def img2healpix2(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
     assert delta_theta < 180.0
     assert delta_phi < 180.0
 
-    result = np.zeros(hp.nside2npix(nside)) + hp.UNSEEN
+    result = np.zeros(hp.nside2npix(nside))
     hits = np.zeros(result.size, dtype='int')
-    img2map(img, result, hits, delta_theta, delta_phi, rot)
+    img2map(img, result, hits, delta_theta, delta_phi, rot, reset_map=False)
     
     return result, hits
 

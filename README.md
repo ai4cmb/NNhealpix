@@ -19,3 +19,10 @@ The code is under development therefore to install it just use:
 git clone git@github.com:NicolettaK/HealpixNN.git
 [sudo] python setup.py develop [--user]
 ```
+
+## Testing
+
+To run a suite of tests, you must have either `nosetests` or
+`pytest`. Just run `nosetests` or `pytest` within the `HealpixNN`
+folder.
+
