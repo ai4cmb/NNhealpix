@@ -154,6 +154,110 @@ def img2healpix(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
     return result, hits
 
 
+class projectimages:
+    '''Project a randomly chosen set of 2D images on Healpix maps.
+
+    This class returns an iterator that produces a set of Healpix maps
+    given a number of 2D images.
+
+    Parameters
+    ----------
+    images: array-like
+        3D tensor with shape [n, width, height], where "n" is the
+        number of images and width×width is the size of each 2D image
+    nside: integer
+        resolution of the Healpix maps
+    delta_theta: float, 2-tuple
+        Either the size along the theta axis of the image (before
+        applying any rotation), or a range (min, max). In the latter
+        case, each map will have delta_theta picked randomly within
+        the range.
+    delta_phi: float, 2-tuple
+        Same as delta_phi, but along the phi direction
+    num: integer (optional)
+        If specified, the iterator will run "num" times. Otherwise,
+        it will loop forever.
+
+    Return value
+    ------------
+    Each iteration returns a pair (num, pixels) containing the index
+    of the image projected on the map and the pixels of the map itself.
+    The value of "num" is always in the range [0, images.shape[0] - 1).
+
+    Example
+    -------
+
+    `````
+    import nnhealpix as nnh
+    import numpy as np
+    import healpy
+    from keras.datasets import mnist
+
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+    for idx, pixels in nnh.projectimages(x_train, 64, 30.0, 30.0, num=5):
+        print('Image index: {0}, digit is {1}'.format(idx, y_train[idx]))
+        healpy.mollview(pixels)
+    `````
+    '''
+
+    def __init__(self, images, nside, delta_theta, delta_phi, num=None):
+        self.images = images
+        self.nside = nside
+        self.delta_theta = delta_theta
+        self.delta_phi = delta_phi
+        self.num = num
+        self.idx = 0
+        self.hitmap = np.zeros(hp.nside2npix(self.nside), dtype='int')
+
+    def __iter__(self):
+        return self
+
+    def _get_angle(self, value):
+        if isinstance(value, (list, tuple, np.ndarray)):
+            assert len(value) == 2
+            start, stop = value
+            result = np.random.rand() * (stop - start) + start
+        else:
+            result = float(value)
+
+        return result
+
+    def _get_delta_theta(self):
+        return self._get_angle(self.delta_theta)
+
+    def _get_delta_phi(self):
+        return self._get_angle(self.delta_phi)
+
+    def __next__(self):
+        if self.num and self.idx >= self.num:
+            raise StopIteration()
+
+        delta_theta = self._get_delta_theta()
+        delta_phi = self._get_delta_phi()
+
+        imgidx = np.random.choice(self.images.shape[0])
+        rot = hp.rotator.Rotator(rot=(
+            np.random.rand() * 360.0,
+            np.random.rand() * 360.0,
+            np.random.rand() * 360.0,
+        ))
+        pixels = np.zeros(hp.nside2npix(self.nside), dtype='float')
+        img2map(
+            self.images[imgidx],
+            pixels,
+            self.hitmap,
+            delta_theta,
+            delta_phi,
+            rot,
+            reset_map=False    # We're not interested in "hits"
+        )
+        
+        self.idx += 1
+        return imgidx, pixels
+        
+
+
 def img2healpix_planar(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
     """projection of a 2D image on healpix map
 
