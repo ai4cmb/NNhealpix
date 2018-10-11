@@ -144,7 +144,7 @@ def test_map_projection():
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ])
-    pixels, hits = nnh.img2healpix2(img, 8, 60, 60)
+    pixels, hits = nnh.img2healpix(img, 8, 60, 60)
 
     assert np.allclose(pixels, expected_pixels)
     assert np.all(hits == expected_hits)
