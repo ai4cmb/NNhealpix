@@ -50,11 +50,11 @@ def dgrade(nside_in, nside_out):
         nside_out while performing convolution
     """
 
-    if hp.isnsideok(nside_in, nest=True)==False:
-        raise ValueError('input nside is not valid')
+    assert hp.isnsideok(nside_in, nest=True), \
+        'invalid input nside {0} in call to dgrade'.format(nside_in)
 
-    if hp.isnsideok(nside_out, nest=True)==False:
-        raise ValueError('output nside in not valid')
+    assert hp.isnsideok(nside_out, nest=True), \
+        'invalid output nside {0} in call to dgrade'.format(nside_out)
 
     try:
         return read_dgrade(nside_in, nside_out)
@@ -95,8 +95,9 @@ def pixel_first_neighbours(ipix, nside):
     If a neighbour does not exist (it can be the case for W, N, E and S) the
     corresponding pixel number will be -1
     """
-    if hp.isnsideok(nside, nest=True)==False:
-        raise ValueError('nside is not valid')
+    assert hp.isnsideok(nside, nest=True), \
+        'invalid nside {0} in call to pixel_first_neighbours'.format(nside)
+
     pix_array = hp.pixelfunc.get_all_neighbours(nside, ipix)
     pix_num = np.insert(pix_array, 4, ipix)
     return pix_num
@@ -119,8 +120,9 @@ def filter9(nside):
         convolution
     """
 
-    if hp.isnsideok(nside, nest=True)==False:
-        raise ValueError('nside is not valid')
+    assert hp.isnsideok(nside, nest=True), \
+         'invalid nside ({0}) in call to filter9'.format(nside)
+    
     filter9 = []
     for i in range(hp.nside2npix(nside)):
         filter9.append(pixel_first_neighbours(i, nside))
