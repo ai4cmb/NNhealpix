@@ -1,10 +1,35 @@
+# -*- encoding: utf-8 -*-
+
 import healpy as hp
 import numpy as np
 import os.path
 
+DATADIR = os.path.expanduser(
+    os.path.join(
+        '~',
+        '.config',
+        'nnhealpix',
+        'ancillary_files',
+    )
+)
+
 """ Functions to create and save the arrays defining the map ordering to
 perfrom convolution.
 """
+
+def dgrade_file_name(nside_in, nside_out):
+    return os.path.join(
+        DATADIR,
+        'dgrade_from{}_to{}.npz'.format(nside_in, nside_out),
+    )
+
+
+def filter9_file_name(nside):
+    return os.path.join(
+        DATADIR,
+        'filter9_nside{}.npz'.format(nside),
+    )
+
 
 def dgrade(nside_in, nside_out):
     """ map ordering to down grade an healpix map
@@ -27,20 +52,26 @@ def dgrade(nside_in, nside_out):
 
     if hp.isnsideok(nside_in, nest=True)==False:
         raise ValueError('input nside is not valid')
+
     if hp.isnsideok(nside_out, nest=True)==False:
         raise ValueError('output nside in not valid')
-    m_in = np.arange(hp.nside2npix(nside_in))
-    m_out = np.arange(hp.nside2npix(nside_out))
-    m_out_nside_in = hp.ud_grade(m_out, nside_in)
-    order_out = []
-    for p in m_out:
-        pix_list = m_in[m_out_nside_in==p]
-        order_out.append(pix_list)
-    order_out = np.array(order_out)
-    order_out = order_out.flatten()
-    string = 'dgrade_from{}_to{}'.format(nside_in, nside_out)
-    write_ancillary_file(string, order_out)
-    return order_out
+
+    try:
+        return read_dgrade(nside_in, nside_out)
+    except FileNotFoundError:
+        m_in = np.arange(hp.nside2npix(nside_in))
+        m_out = np.arange(hp.nside2npix(nside_out))
+        m_out_nside_in = hp.ud_grade(m_out, nside_in)
+        order_out = []
+        for p in m_out:
+            pix_list = m_in[m_out_nside_in==p]
+            order_out.append(pix_list)
+        order_out = np.array(order_out)
+        order_out = order_out.flatten()
+        file_name = dgrade_file_name(nside_in, nside_out)
+        write_ancillary_file(file_name, order_out)
+        return order_out
+
 
 def pixel_first_neighbours(ipix, nside):
     """ find first pixel get_all_neighbours in the healix ring scheme
@@ -70,6 +101,7 @@ def pixel_first_neighbours(ipix, nside):
     pix_num = np.insert(pix_array, 4, ipix)
     return pix_num
 
+
 def filter9(nside):
     """ map ordering to implement a convolutional neural network with a
     kernel convolving the first neighbour of each pixel on an healpix map
@@ -95,27 +127,26 @@ def filter9(nside):
     filter9 = np.array(filter9)
     filter9 = filter9.flatten()
     filter9[filter9==-1] = hp.nside2npix(nside)
-    string = 'filter9_nside{}'.format(nside)
-    write_ancillary_file(string, filter9)
+    file_name = filter9_file_name(nside)
+    write_ancillary_file(file_name, filter9)
     return filter9
 
-def write_ancillary_file(string, array):
+
+def write_ancillary_file(file_name, array):
     """ writes the ordering array on disk
 
     Parameters
     ----------
-    string: string
-        file name. The output will be saved as string.npy
+    file_name: string
+        Name of the file. It should have `.npz` extension
     array: array
         numpy array to be saved on disk
     """
 
-    file_out = os.path.join(
-        os.path.dirname(__file__),
-        'ancillary_files/'+string+'.npy')
-    if os.path.isfile(file_out)==False:
-        np.save(file_out, array)
+    if not os.path.isfile(file_name):
+        np.savez_compressed(file_name, arr=array)
 
+        
 def read_filter9(nside):
     """ reads from disk the ordering array to perform the first neighbours
     filtering
@@ -127,12 +158,12 @@ def read_filter9(nside):
         Must be a valid healpix Nside value
     """
 
-    file_in = os.path.join(
-        os.path.dirname(__file__),
-        'ancillary_files/filter9_nside{}.npy'.format(nside))
-    indices = np.load(file_in)
-    return indices
+    file_name = filter9_file_name(nside)
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
+    with np.load(file_name) as f:
+        return f['arr']
 
+    
 def read_dgrade(nside_in, nside_out):
     """ reads from disk the ordering array to perform the down grade of
     an healpix map
@@ -144,8 +175,7 @@ def read_dgrade(nside_in, nside_out):
         Must be valid healpix Nside values
     """
 
-    file_in = os.path.join(
-        os.path.dirname(__file__),
-        'ancillary_files/dgrade_from{}_to{}.npy'.format(nside_in, nside_out))
-    indices = np.load(file_in)
-    return indices
+    file_name = dgrade_file_name(nside_in, nside_out)
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
+    with np.load(file_name) as f:
+        return f['arr']
