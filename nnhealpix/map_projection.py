@@ -4,37 +4,7 @@ import numpy as np
 import healpy as hp
 from scipy.interpolate import griddata
 from scipy.ndimage.interpolation import zoom
-import numba
-
-@numba.jit(nopython=True)
-def binned_map(signal, pixidx, mappixels, hits, reset_map=True):
-    """Project a TOD onto a map.
-
-    Parameters
-    ----------
-    signal: A TOD containing the signal to be projected (1D vector)
-    pixidx: A TOD containing the index of the pixels (1D vector, same
-            length as `signal`)
-    mappixels: A Healpix map that will contain the projected signal
-    hits: A Healpix map of the same resolution as mappixels that will
-          contain the number of hits
-    """
-
-    assert len(mappixels) == len(hits)
-    assert len(signal) == len(pixidx)
-
-    if reset_map:
-        mappixels[:] = 0.0
-        hits[:] = 0
-    
-    for i in range(len(signal)):
-        mappixels[pixidx[i]] += signal[i]
-        hits[pixidx[i]] += 1
-
-    for i in range(len(mappixels)):
-        if hits[i] > 0:
-            mappixels[i] /= hits[i]
-
+from nnhealpix import binned_map
 
 def img2map(
         img,
