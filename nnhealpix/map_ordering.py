@@ -3,6 +3,7 @@
 import healpy as hp
 import numpy as np
 import os.path
+import numba
 
 DATADIR = os.path.expanduser(
     os.path.join(
@@ -30,6 +31,17 @@ def filter9_file_name(nside):
         'filter9_nside{}.npz'.format(nside),
     )
 
+#@numba.jit()
+def make_indices(x, y, xmin, xmax, ymin, ymax):
+    num = (xmax - xmin) * (ymax - ymin)
+    idx = 0
+    for i in range(xmin, xmax):
+        for j in range(ymin, ymax):
+            x[idx] = i
+            y[idx] = j
+
+            idx += 1
+
 
 def dgrade(nside_in, nside_out):
     """ map ordering to down grade an healpix map
@@ -56,21 +68,34 @@ def dgrade(nside_in, nside_out):
     assert hp.isnsideok(nside_out, nest=True), \
         'invalid output nside {0} in call to dgrade'.format(nside_out)
 
+    assert nside_out < nside_in
+    
     try:
         return read_dgrade(nside_in, nside_out)
     except FileNotFoundError:
-        m_in = np.arange(hp.nside2npix(nside_in))
-        m_out = np.arange(hp.nside2npix(nside_out))
-        m_out_nside_in = hp.ud_grade(m_out, nside_in)
-        order_out = []
-        for p in m_out:
-            pix_list = m_in[m_out_nside_in==p]
-            order_out.append(pix_list)
-        order_out = np.array(order_out)
-        order_out = order_out.flatten()
+        fact = nside_in // nside_out
+        pixels = hp.nside2npix(nside_out)
+        stride = fact * fact
+        result = np.empty(pixels * stride)
+        x, y, f = hp.pix2xyf(nside_out, np.arange(pixels))
+
+        i = np.empty(stride, dtype='int')
+        j = np.empty(stride, dtype='int')
+        f_spread = np.empty(stride, dtype='int')
+        for pixnum in range(pixels):
+            make_indices(
+                i,
+                j,
+                fact * x[pixnum], fact * (x[pixnum] + 1),
+                fact * y[pixnum], fact * (y[pixnum] + 1),
+            )
+            f_spread[:] = f[pixnum]
+            result[(pixnum*stride):((pixnum + 1)*stride)] = \
+                sorted(hp.xyf2pix(nside_in, i, j, f_spread))
+
         file_name = dgrade_file_name(nside_in, nside_out)
-        write_ancillary_file(file_name, order_out)
-        return order_out
+        write_ancillary_file(file_name, result)
+        return result
 
 
 def pixel_first_neighbours(ipix, nside):
