@@ -13,6 +13,7 @@ class OrderMap(Layer):
     """
 
     def __init__(self, indices, **kwargs):
+        self.input_indices = np.array(indices, dtype='int32')
         Kindices = K.variable(indices, dtype='int32')
         self.indices = Kindices
         super(OrderMap, self).__init__(**kwargs)
@@ -29,6 +30,10 @@ class OrderMap(Layer):
     def compute_output_shape(self, input_shape):
         return (
             input_shape[0], int(self.output_dim[1]), int(self.output_dim[2]))
+    def get_config(self):
+        config = super(OrderMap, self).get_config()
+        config.update({'indices': self.input_indices})
+        return config
 
 def Dgrade(nside_in, nside_out):
     """ keras layer performing a downgrade of input maps

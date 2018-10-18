@@ -5,7 +5,6 @@
 - add functions that return the ordering also for higher order neighbour filters --> MAURI
 - implement some simple NN architectures
 - add names to layers in blocks
-- implement better algorithm to project images on sphere --> MAURI
-- in the current map_projection implement the possibility to randomize the
-  position of the image on the sphere
 - add possibility to work with multiple maps: for example T, TQU, QU
+- Implement Convolution on pixel at lower Nside
+- Max pooling without degrading but choosing the maximum between neighbours
