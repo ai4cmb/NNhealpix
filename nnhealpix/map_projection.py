@@ -2,9 +2,40 @@
 
 import numpy as np
 import healpy as hp
+import numba
 from scipy.interpolate import griddata
 from scipy.ndimage.interpolation import zoom
-from nnhealpix import binned_map
+
+
+@numba.jit(nopython=True)
+def binned_map(signal, pixidx, mappixels, hits, reset_map=True):
+    """Project a TOD onto a map.
+
+    Parameters
+    ----------
+    signal: A TOD containing the signal to be projected (1D vector)
+    pixidx: A TOD containing the index of the pixels (1D vector, same
+            length as `signal`)
+    mappixels: A Healpix map that will contain the projected signal
+    hits: A Healpix map of the same resolution as mappixels that will
+          contain the number of hits
+    """
+
+    assert len(mappixels) == len(hits)
+    assert len(signal) == len(pixidx)
+
+    if reset_map:
+        mappixels[:] = 0.0
+        hits[:] = 0
+
+    for i in range(len(signal)):
+        mappixels[pixidx[i]] += signal[i]
+        hits[pixidx[i]] += 1
+
+    for i in range(len(mappixels)):
+        if hits[i] > 0:
+            mappixels[i] /= hits[i]
+
 
 def img2map(
         img,
@@ -120,7 +151,7 @@ def img2healpix(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
     result = np.zeros(hp.nside2npix(nside))
     hits = np.zeros(result.size, dtype='int')
     img2map(img, result, hits, delta_theta, delta_phi, rot, reset_map=False)
-    
+
     return result, hits
 
 
@@ -222,10 +253,9 @@ class projectimages:
             rot,
             reset_map=False    # We're not interested in "hits"
         )
-        
+
         self.idx += 1
         return imgidx, pixels
-        
 
 
 def img2healpix_planar(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
@@ -269,37 +299,37 @@ def img2healpix_planar(img, nside, thetac, phic, delta_theta, delta_phi, rot=Non
     theta_max = np.radians(theta_max)
     phi_min = np.radians(phi_min)
     phi_max = np.radians(phi_max)
-    img_theta_temp = np.linspace(theta_min,theta_max,ysize)
-    img_phi_temp = np.linspace(phi_min,phi_max,xsize)
+    img_theta_temp = np.linspace(theta_min, theta_max, ysize)
+    img_phi_temp = np.linspace(phi_min, phi_max, xsize)
     ipix = np.arange(hp.nside2npix(nside))
     if rot == None:
-        theta_r, phi_r = hp.pix2ang(nside,ipix)
+        theta_r, phi_r = hp.pix2ang(nside, ipix)
     theta1 = theta_min
     theta2 = theta_max
-    flg = np.where(theta_r<theta1,0,1)
-    flg *= np.where(theta_r>theta2,0,1)
+    flg = np.where(theta_r < theta1, 0, 1)
+    flg *= np.where(theta_r > theta2, 0, 1)
     if phi_min >= 0:
         phi1 = phi_min
         phi2 = phi_max
-        flg  *= np.where(phi_r<phi1,0,1)
-        flg *= np.where(phi_r>phi2,0,1)
+        flg *= np.where(phi_r < phi1, 0, 1)
+        flg *= np.where(phi_r > phi2, 0, 1)
     else:
         phi1 = 2.*np.pi+phi_min
         phi2 = phi_max
-        flg *= np.where((phi2<phi_r) & (phi_r<phi1),0,1)
-        img_phi_temp[img_phi_temp<0] = 2*np.pi+img_phi_temp[img_phi_temp<0]
-    img_phi, img_theta = np.meshgrid(img_phi_temp,img_theta_temp)
+        flg *= np.where((phi2 < phi_r) & (phi_r < phi1), 0, 1)
+        img_phi_temp[img_phi_temp < 0] = 2*np.pi+img_phi_temp[img_phi_temp < 0]
+    img_phi, img_theta = np.meshgrid(img_phi_temp, img_theta_temp)
     img_phi = img_phi.flatten()
     img_theta = img_theta.flatten()
-    ipix = np.compress(flg,ipix)
-    pl_theta  = np.compress(flg,theta_r)
-    pl_phi  = np.compress(flg,phi_r)
-    points = np.zeros((len(img_theta),2),'d')
-    points[:,0] = img_theta
-    points[:,1] = img_phi
+    ipix = np.compress(flg, ipix)
+    pl_theta = np.compress(flg, theta_r)
+    pl_phi = np.compress(flg, phi_r)
+    points = np.zeros((len(img_theta), 2), 'd')
+    points[:, 0] = img_theta
+    points[:, 1] = img_phi
     npix = hp.nside2npix(nside)
-    hp_map = np.zeros((data.shape[0],npix),'d')
+    hp_map = np.zeros((data.shape[0], npix), 'd')
     for i in range(data.shape[0]):
-        hp_map[i,ipix] = griddata(
-            points, data[i,:], (pl_theta, pl_phi), method='nearest')
+        hp_map[i, ipix] = griddata(
+            points, data[i, :], (pl_theta, pl_phi), method='nearest')
     return hp_map

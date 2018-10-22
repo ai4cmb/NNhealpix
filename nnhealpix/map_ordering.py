@@ -18,6 +18,7 @@ DATADIR = os.path.expanduser(
 perfrom convolution.
 """
 
+
 def dgrade_file_name(nside_in, nside_out):
     return os.path.join(
         DATADIR,
@@ -31,7 +32,9 @@ def filter9_file_name(nside):
         'filter9_nside{}.npz'.format(nside),
     )
 
-#@numba.jit()
+# @numba.jit()
+
+
 def make_indices(x, y, xmin, xmax, ymin, ymax):
     num = (xmax - xmin) * (ymax - ymin)
     idx = 0
@@ -69,7 +72,7 @@ def dgrade(nside_in, nside_out):
         'invalid output nside {0} in call to dgrade'.format(nside_out)
 
     assert nside_out < nside_in
-    
+
     try:
         return read_dgrade(nside_in, nside_out)
     except FileNotFoundError:
@@ -91,7 +94,7 @@ def dgrade(nside_in, nside_out):
             )
             f_spread[:] = f[pixnum]
             result[(pixnum*stride):((pixnum + 1)*stride)] = \
-                sorted(hp.xyf2pix(nside_in, i, j, f_spread))
+                hp.xyf2pix(nside_in, i, j, f_spread)
 
         file_name = dgrade_file_name(nside_in, nside_out)
         write_ancillary_file(file_name, result)
@@ -146,14 +149,14 @@ def filter9(nside):
     """
 
     assert hp.isnsideok(nside, nest=True), \
-         'invalid nside ({0}) in call to filter9'.format(nside)
-    
+        'invalid nside ({0}) in call to filter9'.format(nside)
+
     filter9 = []
     for i in range(hp.nside2npix(nside)):
         filter9.append(pixel_first_neighbours(i, nside))
     filter9 = np.array(filter9)
     filter9 = filter9.flatten()
-    filter9[filter9==-1] = hp.nside2npix(nside)
+    filter9[filter9 == -1] = hp.nside2npix(nside)
     file_name = filter9_file_name(nside)
     write_ancillary_file(file_name, filter9)
     return filter9
@@ -173,7 +176,7 @@ def write_ancillary_file(file_name, array):
     if not os.path.isfile(file_name):
         np.savez_compressed(file_name, arr=array)
 
-        
+
 def read_filter9(nside):
     """ reads from disk the ordering array to perform the first neighbours
     filtering
@@ -190,7 +193,7 @@ def read_filter9(nside):
     with np.load(file_name) as f:
         return f['arr']
 
-    
+
 def read_dgrade(nside_in, nside_out):
     """ reads from disk the ordering array to perform the down grade of
     an healpix map

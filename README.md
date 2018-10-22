@@ -20,13 +20,6 @@ git clone git@github.com:NicolettaK/HealpixNN.git
 [sudo] python setup.py develop [--user]
 ```
 
-In order to compile the Fortran modules, at the moment you have to do it by hand:
-
-```bash
-f2py -m _maptools -c _maptools.f90
-```
-
-
 ## Testing
 
 To run a suite of tests, you must have either `nosetests` or
