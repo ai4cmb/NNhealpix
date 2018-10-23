@@ -178,6 +178,7 @@ class projectimages:
     num: integer (optional)
         If specified, the iterator will run "num" times. Otherwise,
         it will loop forever.
+    rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object (optional)
 
     Return value
     ------------
@@ -202,7 +203,7 @@ class projectimages:
     `````
     '''
 
-    def __init__(self, images, nside, delta_theta, delta_phi, num=None):
+    def __init__(self, images, nside, delta_theta, delta_phi, rot=None, num=None):
         self.images = images
         self.nside = nside
         self.delta_theta = delta_theta
@@ -210,6 +211,7 @@ class projectimages:
         self.num = num
         self.idx = 0
         self.hitmap = np.zeros(hp.nside2npix(self.nside), dtype='int')
+        self.rot = rot
 
     def __iter__(self):
         return self
@@ -238,11 +240,14 @@ class projectimages:
         delta_phi = self._get_delta_phi()
 
         imgidx = np.random.choice(self.images.shape[0])
-        rot = hp.rotator.Rotator(rot=(
-            np.random.rand() * 360.0,
-            np.random.rand() * 360.0,
-            np.random.rand() * 360.0,
-        ))
+        if self.rot:
+            rotation = self.rot
+        else:
+            rotation = hp.rotator.Rotator(rot=(
+                np.random.rand() * 360.0,
+                np.random.rand() * 360.0,
+                np.random.rand() * 360.0,
+                ))
         pixels = np.zeros(hp.nside2npix(self.nside), dtype='float')
         img2map(
             self.images[imgidx],
@@ -250,7 +255,7 @@ class projectimages:
             self.hitmap,
             delta_theta,
             delta_phi,
-            rot,
+            rotation,
             reset_map=False    # We're not interested in "hits"
         )
 
