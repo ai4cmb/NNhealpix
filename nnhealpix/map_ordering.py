@@ -150,15 +150,20 @@ def pixel_2nd_neighbours(ipix, nside):
     If a neighbour does not exist, the corresponding pixel number will be -1
     """
 
-    result = set([ipix])
+    pixels = set([ipix])
     for centerpix in hp.pixelfunc.get_all_neighbours(nside, ipix):
         if centerpix == -1:
+            # This is wrong, we should employ a well-defined strategy here
             continue
 
-        for ringpix in hp.pixelfunc.get_all_neighbours(nside, centerpix):
-            result.add(ringpix)
+        for sidepix in hp.pixelfunc.get_all_neighbours(nside, centerpix):
+            pixels.add(sidepix)
 
-    return np.array(list(result))
+    result = np.empty(len(pixels), dtype='int')
+    for i, item in enumerate(sorted(pixels)):
+        result[i] = item
+
+        return result
 
 
 def filter9(nside, order=1):
@@ -190,13 +195,11 @@ def filter9(nside, order=1):
         ("invalid order ({0}) passed to filter9, valid values are {1}"
          .format(order, ', '.join([str(x) for x in order_fn.keys()])))
 
-    result = []
+    result = np.empty(0, dtype='int')
     fn = order_fn[order]
     for i in range(hp.nside2npix(nside)):
-        print(i, ' => ', fn(i, nside))
-        result.append(fn(i, nside))
-    result = np.array(result)
-    result = result.flatten()
+        result = np.concatenate((result, fn(i, nside)))
+
     result[result == -1] = hp.nside2npix(nside)
     file_name = filter9_file_name(nside, order)
     write_ancillary_file(file_name, result)

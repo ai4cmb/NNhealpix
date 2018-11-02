@@ -416,5 +416,5 @@ def test_filter9_order2():
         12, 8, 9,
     ], dtype='int')
 
-    print(nnh.filter9(1, order=2))
-    assert np.all(ref1 == nnh.filter9(1, order=2))
+    print(nnh.filter9(4, order=2))
+    assert np.all(ref1 == nnh.filter9(4, order=2))
