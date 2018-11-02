@@ -26,10 +26,10 @@ def dgrade_file_name(nside_in, nside_out):
     )
 
 
-def filter9_file_name(nside):
+def filter9_file_name(nside, order):
     return os.path.join(
         DATADIR,
-        'filter9_nside{}.npz'.format(nside),
+        'filter9_nside{0}_order{1}.npz'.format(nside, order),
     )
 
 
@@ -100,7 +100,7 @@ def dgrade(nside_in, nside_out):
 
 
 def pixel_first_neighbours(ipix, nside):
-    """ find first pixel get_all_neighbours in the healix ring scheme
+    """ find first pixel get_all_neighbours in the healpix ring scheme
     Parameters
     ----------
     ipix : integer
@@ -129,7 +129,39 @@ def pixel_first_neighbours(ipix, nside):
     return pix_num
 
 
-def filter9(nside):
+def pixel_2nd_neighbours(ipix, nside):
+    """ find all the pixels within two circle rings from pixel with index `ipix`
+    Parameters
+    ----------
+    ipix : integer
+        pixel number for which to find the neighbours
+    nside : integer
+        Nside parameter defining the healpix pixelization scheme.
+        Must be a valid healpix Nside value
+
+    Returns
+    -------
+    pix_num : array
+        array with 25 elements, corresponding to the neighbours and the
+        ipix itself. The pixels are listed in ascending order
+
+    Notes
+    -------
+    If a neighbour does not exist, the corresponding pixel number will be -1
+    """
+
+    result = set([ipix])
+    for centerpix in hp.pixelfunc.get_all_neighbours(nside, ipix):
+        if centerpix == -1:
+            continue
+
+        for ringpix in hp.pixelfunc.get_all_neighbours(nside, centerpix):
+            result.add(ringpix)
+
+    return np.array(list(result))
+
+
+def filter9(nside, order=1):
     """ map ordering to implement a convolutional neural network with a
     kernel convolving the first neighbour of each pixel on an healpix map
 
@@ -149,15 +181,26 @@ def filter9(nside):
     assert hp.isnsideok(nside, nest=True), \
         'invalid nside ({0}) in call to filter9'.format(nside)
 
-    filter9 = []
+    order_fn = {
+        1: pixel_first_neighbours,
+        2: pixel_2nd_neighbours,
+    }
+
+    assert order in order_fn.keys(), \
+        ("invalid order ({0}) passed to filter9, valid values are {1}"
+         .format(order, ', '.join([str(x) for x in order_fn.keys()])))
+
+    result = []
+    fn = order_fn[order]
     for i in range(hp.nside2npix(nside)):
-        filter9.append(pixel_first_neighbours(i, nside))
-    filter9 = np.array(filter9)
-    filter9 = filter9.flatten()
-    filter9[filter9 == -1] = hp.nside2npix(nside)
-    file_name = filter9_file_name(nside)
-    write_ancillary_file(file_name, filter9)
-    return filter9
+        print(i, ' => ', fn(i, nside))
+        result.append(fn(i, nside))
+    result = np.array(result)
+    result = result.flatten()
+    result[result == -1] = hp.nside2npix(nside)
+    file_name = filter9_file_name(nside, order)
+    write_ancillary_file(file_name, result)
+    return result
 
 
 def write_ancillary_file(file_name, array):
@@ -175,7 +218,7 @@ def write_ancillary_file(file_name, array):
         np.savez_compressed(file_name, arr=array)
 
 
-def read_filter9(nside):
+def read_filter9(nside, order):
     """ reads from disk the ordering array to perform the first neighbours
     filtering
 
@@ -186,7 +229,7 @@ def read_filter9(nside):
         Must be a valid healpix Nside value
     """
 
-    file_name = filter9_file_name(nside)
+    file_name = filter9_file_name(nside, order)
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with np.load(file_name) as f:
         return f['arr']

@@ -236,7 +236,7 @@ def test_dgrade():
     assert np.all(ref84 == nnh.dgrade(8, 4))
 
 
-def test_filter9():
+def test_filter9_order1():
     ref1 = np.array([
         4, 12, 3, 2, 0, 1, 12, 5, 8, 5, 12, 0, 3, 1, 2,
         12, 6, 9, 6, 12, 1, 0, 2, 3, 12, 7, 10, 7, 12, 2,
@@ -399,6 +399,22 @@ def test_filter9():
         180, 188, 189,
     ], dtype='int')
 
-    assert np.all(ref1 == nnh.filter9(1))
-    assert np.all(ref2 == nnh.filter9(2))
-    assert np.all(ref4 == nnh.filter9(4))
+    assert np.all(ref1 == nnh.filter9(1, order=1))
+    assert np.all(ref2 == nnh.filter9(2, order=1))
+    assert np.all(ref4 == nnh.filter9(4, order=1))
+
+
+def test_filter9_order2():
+    ref1 = np.array([
+        4, 12, 3, 2, 0, 1, 12, 5, 8, 5, 12, 0, 3, 1, 2,
+        12, 6, 9, 6, 12, 1, 0, 2, 3, 12, 7, 10, 7, 12, 2,
+        1, 3, 0, 12, 4, 11, 11, 7, 3, 12, 4, 0, 5, 8, 12,
+        8, 4, 0, 12, 5, 1, 6, 9, 12, 9, 5, 1, 12, 6, 2,
+        7, 10, 12, 10, 6, 2, 12, 7, 3, 4, 11, 12, 11, 12, 4,
+        0, 8, 5, 12, 9, 10, 8, 12, 5, 1, 9, 6, 12, 10, 11,
+        9, 12, 6, 2, 10, 7, 12, 11, 8, 10, 12, 7, 3, 11, 4,
+        12, 8, 9,
+    ], dtype='int')
+
+    print(nnh.filter9(1, order=2))
+    assert np.all(ref1 == nnh.filter9(1, order=2))
