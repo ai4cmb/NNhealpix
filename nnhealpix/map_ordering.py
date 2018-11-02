@@ -32,8 +32,6 @@ def filter9_file_name(nside):
         'filter9_nside{}.npz'.format(nside),
     )
 
-# @numba.jit()
-
 
 def make_indices(x, y, xmin, xmax, ymin, ymax):
     num = (xmax - xmin) * (ymax - ymin)
