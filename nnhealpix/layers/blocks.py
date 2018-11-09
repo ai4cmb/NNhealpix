@@ -153,7 +153,7 @@ def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
     try:
         pixel_indices = np.load(file_in)
     except:
-        pixel_indices = nnhealpix.map_ordering.filter9(nside)
+        pixel_indices = nnhealpix.map_ordering.filter(nside)
     def f(x):
         y = OrderMap(pixel_indices)(x)
         y = keras.layers.Conv1D(

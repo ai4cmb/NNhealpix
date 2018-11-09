@@ -26,10 +26,10 @@ def dgrade_file_name(nside_in, nside_out):
     )
 
 
-def filter9_file_name(nside, order):
+def filter_file_name(nside, order):
     return os.path.join(
         DATADIR,
-        'filter9_nside{0}_order{1}.npz'.format(nside, order),
+        'filter_nside{0}_order{1}.npz'.format(nside, order),
     )
 
 
@@ -99,7 +99,7 @@ def dgrade(nside_in, nside_out):
         return result
 
 
-def pixel_first_neighbours(ipix, nside):
+def pixel_1st_neighbours(ipix, nside):
     """ find first pixel get_all_neighbours in the healpix ring scheme
     Parameters
     ----------
@@ -166,7 +166,7 @@ def pixel_2nd_neighbours(ipix, nside):
         return result
 
 
-def filter9(nside, order=1):
+def filter(nside, order=1):
     """ map ordering to implement a convolutional neural network with a
     kernel convolving the first neighbour of each pixel on an healpix map
 
@@ -178,21 +178,21 @@ def filter9(nside, order=1):
 
     Returns
     -------
-    filter9 : array
+    filter : array
         array defining the re-ordering of the input map to perform the
         convolution
     """
 
     assert hp.isnsideok(nside, nest=True), \
-        'invalid nside ({0}) in call to filter9'.format(nside)
+        'invalid nside ({0}) in call to filter'.format(nside)
 
     order_fn = {
-        1: pixel_first_neighbours,
+        1: pixel_1st_neighbours,
         2: pixel_2nd_neighbours,
     }
 
     assert order in order_fn.keys(), \
-        ("invalid order ({0}) passed to filter9, valid values are {1}"
+        ("invalid order ({0}) passed to filter, valid values are {1}"
          .format(order, ', '.join([str(x) for x in order_fn.keys()])))
 
     result = np.empty(0, dtype='int')
@@ -201,7 +201,7 @@ def filter9(nside, order=1):
         result = np.concatenate((result, fn(i, nside)))
 
     result[result == -1] = hp.nside2npix(nside)
-    file_name = filter9_file_name(nside, order)
+    file_name = filter_file_name(nside, order)
     write_ancillary_file(file_name, result)
     return result
 
@@ -221,7 +221,7 @@ def write_ancillary_file(file_name, array):
         np.savez_compressed(file_name, arr=array)
 
 
-def read_filter9(nside, order):
+def read_filter(nside, order):
     """ reads from disk the ordering array to perform the first neighbours
     filtering
 
@@ -232,7 +232,7 @@ def read_filter9(nside, order):
         Must be a valid healpix Nside value
     """
 
-    file_name = filter9_file_name(nside, order)
+    file_name = filter_file_name(nside, order)
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with np.load(file_name) as f:
         return f['arr']
