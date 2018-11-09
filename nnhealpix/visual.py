@@ -18,7 +18,7 @@ def filter_img(weights, order=1):
 
     Returns
     ------------
-    filter_img: array
+    img: array
         2D image of the input filter
     '''
 
@@ -35,10 +35,29 @@ def filter_img(weights, order=1):
     pix_num = fn(ipix, nside)
     m = np.zeros(hp.nside2npix(nside))+np.inf
     m[pix_num] = weights
-    filter_img = hp.gnomview(m, reso=5.2, rot=[0, 2],
+    img = hp.gnomview(m, reso=5.2, rot=[0, 2],
         notext=True, return_projected_map=True)
     plt.close()
-    return filter_img
+    return img
+
+def map_img(map_in, order=1):
+    '''Return a 2D image of a filter.
+
+    Parameters
+    ----------
+    map: array
+        map to plot
+
+    Returns
+    ------------
+    map_img: array
+        2D image of the input filter
+    '''
+
+    img = hp.mollview(map_in, notext=True, return_projected_map=True)
+    plt.close()
+    img = np.flip(img, axis=0)
+    return img
 
 def plot_filters(filters, cmap=None, cbar=False):
     '''plot a set of filters.
@@ -69,7 +88,7 @@ def plot_filters(filters, cmap=None, cbar=False):
         ncol = 8
     else:
         ncol = nfilt
-    nrow= round(nfilt/ncol)
+    nrow= round(nfilt/ncol+0.5)
     fig = plt.figure(figsize=(8, 4))
     axes = fig.subplots(nrows=nrow, ncols=ncol)
     if nfilt == 1:
@@ -79,6 +98,58 @@ def plot_filters(filters, cmap=None, cbar=False):
     for j, ax in enumerate(axess):
         filt = filter_img(filters[j])
         im = ax.imshow(filt, vmin=filt_min, vmax=filt_max)
+        ax.set_axis_off()
+        im.set_cmap(cmap)
+    fig.subplots_adjust(right=0.8)
+    if cbar:
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+        fig.colorbar(im, cax=cbar_ax)
+    return fig
+
+def plot_layer_output(maps, cmap=None, cbar=False, maps_min=None, maps_max=None):
+    '''plot a set of filters.
+
+    Parameters
+    ----------
+    maps: array
+        output maps of the layer to plot
+    cmap: color map
+        if None viridis map will be used in the plot
+    cbar: boolean
+        whether or not to add colorbar to the plot.
+        Default is False
+
+    Returns
+    ------------
+    fig: figure
+    '''
+
+    if not cmap:
+        cmap = plt.cm.viridis
+    if len(maps.shape)==1:
+        maps = maps.reshape(1, len(maps))
+    nmaps = len(maps)
+    if maps_min==None:
+        maps_min = maps.min()
+    if maps_max==None:
+        maps_max = maps.max()
+    if nmaps >= 8:
+        ncol = 8
+    else:
+        ncol = nmaps
+    nrow= round(nmaps/ncol+0.5)
+    fig = plt.figure(figsize=(2*ncol, 1*nrow))
+    axes = fig.subplots(nrows=nrow, ncols=ncol)
+    if nmaps == 1:
+        axess = [axes]
+    else:
+        axess = axes.flat
+    for j, ax in enumerate(axess):
+        try:
+            m = map_img(maps[j])
+        except:
+            m = map_img(maps[0])*0+np.inf
+        im = ax.imshow(m, vmin=maps_min, vmax=maps_max)
         ax.set_axis_off()
         im.set_cmap(cmap)
     fig.subplots_adjust(right=0.8)
