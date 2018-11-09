@@ -6,6 +6,22 @@ from nnhealpix.map_ordering import *
 import matplotlib.pyplot as plt
 
 def filter_img(weights, order=1):
+    '''Return a 2D image of a filter.
+
+    Parameters
+    ----------
+    weights: array
+        array of filter weights
+    order: integer
+        order of the filter (1st, 2nd neighbours)
+        only 1 impented!
+
+    Returns
+    ------------
+    filter_img: array
+        2D image of the input filter
+    '''
+
     order_fn = {
         1: pixel_1st_neighbours,
         2: pixel_2nd_neighbours,
@@ -24,7 +40,24 @@ def filter_img(weights, order=1):
     plt.close()
     return filter_img
 
-def plot_filters(filters, cmap=None):
+def plot_filters(filters, cmap=None, cbar=False):
+    '''plot a set of filters.
+
+    Parameters
+    ----------
+    filters: array
+        array of filters to plot
+    cmap: color map
+        if None viridis map will be used in the plot
+    cbar: boolean
+        whether or not to add colorbar to the plot.
+        Default is False
+
+    Returns
+    ------------
+    fig: figure
+    '''
+
     if not cmap:
         cmap = plt.cm.viridis
     if len(filters.shape)==1:
@@ -49,6 +82,7 @@ def plot_filters(filters, cmap=None):
         ax.set_axis_off()
         im.set_cmap(cmap)
     fig.subplots_adjust(right=0.8)
-    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-    fig.colorbar(im, cax=cbar_ax)
+    if cbar:
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+        fig.colorbar(im, cax=cbar_ax)
     return fig
