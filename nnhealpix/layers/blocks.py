@@ -186,15 +186,11 @@ def ResConvNeighbours(
 
     def f(x):
         shortcut = x
-        y = ConvNeighbours(
-            nside, kernel_size, filters,
-            use_bias=use_bias, trainable=trainable)(x)
+        y = ConvNeighbours(nside, kernel_size, filters,use_bias=use_bias, trainable=trainable)(x)
 	    if BatchNorm:
             y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
         y = keras.layers.Activation('relu')(y)
-        y = ConvNeighbours(
-            nside, kernel_size, filters,
-            use_bias=use_bias, trainable=trainable)(y)
+        y = ConvNeighbours(nside, kernel_size, filters,use_bias=use_bias, trainable=trainable)(y)
         if BatchNorm:
             y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
         y = keras.layers.Activation('relu')(y)
