@@ -163,7 +163,7 @@ def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
     return f
 
 def ResConvNeighbours(
-    nside, kernel_size, filters, use_bias=False, trainable=True):
+    nside, kernel_size, filters, use_bias=False, trainable=True, BatchNorm=False):
     """ keras layer performing a residual convolution block, convolving twice
     over neighbour pixels
 
@@ -188,12 +188,14 @@ def ResConvNeighbours(
         shortcut = x
         y = ConvNeighbours(
             nside, kernel_size, filters, use_bias=use_bias, trainable=trainable)(x)
-        y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
+	if BatchNorm:
+            y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
         y = keras.layers.Activation('relu')(y)
         y = ConvNeighbours(
             nside, kernel_size, filters, use_bias=use_bias, trainable=trainable)(y)
-        y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
-        y = keras.layers.Add()([y, shortcut])
+	if BatchNorm:
+            y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
         y = keras.layers.Activation('relu')(y)
+        y = keras.layers.Add()([y, shortcut])
         return y
     return f
