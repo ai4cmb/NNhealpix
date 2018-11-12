@@ -59,7 +59,7 @@ def map_img(map_in, order=1):
     img = np.flip(img, axis=0)
     return img
 
-def plot_filters(filters, cmap=None, cbar=False):
+def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
     '''plot a set of filters.
 
     Parameters
@@ -82,8 +82,12 @@ def plot_filters(filters, cmap=None, cbar=False):
     if len(filters.shape)==1:
         filters = filters.reshape(1, len(filters))
     nfilt = len(filters)
-    filt_min = filters.min()
-    filt_max = filters.max()
+    filt_min = min
+    filt_max = max
+    if filt_min==None:
+        filt_min = filters.min()
+    if filt_max==None:
+        filt_max = filters.max()
     if nfilt >= 8:
         ncol = 8
     else:
@@ -97,6 +101,8 @@ def plot_filters(filters, cmap=None, cbar=False):
         axess = axes.flat
     for j, ax in enumerate(axess):
         filt = filter_img(filters[j])
+        filt[np.where((filt<filt_min) & (filt!=-np.inf))] = filt_min
+        filt[np.where((filt>filt_max) & (filt!=np.inf))] = filt_max
         im = ax.imshow(filt, vmin=filt_min, vmax=filt_max)
         ax.set_axis_off()
         im.set_cmap(cmap)
@@ -106,7 +112,7 @@ def plot_filters(filters, cmap=None, cbar=False):
         fig.colorbar(im, cax=cbar_ax)
     return fig
 
-def plot_layer_output(maps, cmap=None, cbar=False, maps_min=None, maps_max=None):
+def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
     '''plot a set of filters.
 
     Parameters
@@ -129,6 +135,8 @@ def plot_layer_output(maps, cmap=None, cbar=False, maps_min=None, maps_max=None)
     if len(maps.shape)==1:
         maps = maps.reshape(1, len(maps))
     nmaps = len(maps)
+    maps_min = min
+    maps_max = max
     if maps_min==None:
         maps_min = maps.min()
     if maps_max==None:
@@ -147,6 +155,8 @@ def plot_layer_output(maps, cmap=None, cbar=False, maps_min=None, maps_max=None)
     for j, ax in enumerate(axess):
         try:
             m = map_img(maps[j])
+            m[np.where((m<maps_min) & (m!=-np.inf))] = maps_min
+            m[np.where((m>maps_max) & (m!=np.inf))] = maps_max
         except:
             m = map_img(maps[0])*0+np.inf
         im = ax.imshow(m, vmin=maps_min, vmax=maps_max)
