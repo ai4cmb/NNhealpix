@@ -4,6 +4,8 @@ import keras
 from keras.models import load_model
 from nnhealpix.map_ordering import *
 import matplotlib.pyplot as plt
+import matplotlib
+
 
 def filter_img(weights, order=1):
     '''Return a 2D image of a filter.
@@ -67,7 +69,7 @@ def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
     filters: array
         array of filters to plot
     cmap: color map
-        if None viridis map will be used in the plot
+        if None a pick/black color map will be used in the plot
     cbar: boolean
         whether or not to add colorbar to the plot.
         Default is False
@@ -78,7 +80,9 @@ def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
     '''
 
     if not cmap:
-        cmap = plt.cm.viridis
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
+        cmap.set_bad('white')
+        cmap.set_under('white', alpha=0)
     if len(filters.shape)==1:
         filters = filters.reshape(1, len(filters))
     nfilt = len(filters)
@@ -120,7 +124,7 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
     maps: array
         output maps of the layer to plot
     cmap: color map
-        if None viridis map will be used in the plot
+        if None a pick/black color map will be used in the plot
     cbar: boolean
         whether or not to add colorbar to the plot.
         Default is False
@@ -131,7 +135,9 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
     '''
 
     if not cmap:
-        cmap = plt.cm.viridis
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
+        cmap.set_bad('white')
+        cmap.set_under('white', alpha=0)
     if len(maps.shape)==1:
         maps = maps.reshape(1, len(maps))
     nmaps = len(maps)
