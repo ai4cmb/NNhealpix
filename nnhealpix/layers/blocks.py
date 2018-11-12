@@ -187,6 +187,7 @@ def ResConvNeighbours(
     def f(x):
         shortcut = x
         y = ConvNeighbours(nside, kernel_size, filters,use_bias=use_bias, trainable=trainable)(x)
+        shortcut = keras.layers.Lambda(x, output_shape=y._keras_shape)
         if BatchNorm:
             y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
         y = keras.layers.Activation('relu')(y)
