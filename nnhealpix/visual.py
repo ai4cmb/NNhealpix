@@ -73,7 +73,9 @@ def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
     cbar: boolean
         whether or not to add colorbar to the plot.
         Default is False
-
+    min, max: float
+        min and max value for the color map, if None they are the min and max
+        values of the set of filters
     Returns
     ------------
     fig: figure
@@ -117,8 +119,8 @@ def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
         fig.colorbar(im, cax=cbar_ax)
     return fig
 
-def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None, count=True):
-    '''plot a set of filters.
+def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
+    '''plot a the effect of filters on maps in a given layer of the network.
 
     Parameters
     ----------
@@ -129,6 +131,12 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None, count=Tru
     cbar: boolean
         whether or not to add colorbar to the plot.
         Default is False
+    min, max: float
+        min and max value for the color map, if None they are the min and max
+        values of the set of maps
+    count: boolean
+        whether to return or not the number of active nodes in the layer,
+        default is True
 
     Returns
     ------------
@@ -171,8 +179,8 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None, count=Tru
         im = ax.imshow(m, vmin=maps_min, vmax=maps_max)
         ax.set_axis_off()
         im.set_cmap(cmap)
-        try:
-            if np.all(map[j]==0):
+        if j<nmaps:
+            if np.all(maps[j]==0):
                 totactive -= 1
                 line = np.arange(600)+100
                 ax.plot(line, line/2, color='black', lw=0.5, alpha=0.5)
@@ -180,15 +188,40 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None, count=Tru
     if cbar:
         cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
         fig.colorbar(im, cax=cbar_ax)
-    if count:
-        print('Active nodes: ', totactive )
-        return totactive, fig
-    else:
-        return fig
+    print('Active nodes: ', totactive )
+    return fig
 
 def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None, plot=True):
+    '''return a map of the active nodes in a give layer and plot it
+
+    Parameters
+    ----------
+    model: keras model object
+        Neural network model to analyze.
+    layer: int
+        number defining the layer in model to analyze.
+    X_val: array-like
+        set of inputs used for network validation.
+    binary: boolean
+        if True the value of each node will be set to one if the node is active
+        if False they are set equal to the rms of the map.
+        Default is False.
+    cmap: color map
+        if None a pick/black color map will be used in the plot.
+    plot: boolean
+        if True a plot with the map of the active nodes in the layer will be
+        shown. Default is True.
+
+    Returns
+    ------------
+    nodes: array-like
+        matrix with the map of active nodes in the layer.
+    fig: figure
+    '''
+
     if not cmap:
-        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("",
+            ["#FEFAFA", "black"])
         #cmap = matplotlib.colorbar.cm.magma_r
         cmap.set_bad('white', alpha=0)
         cmap.set_under('white', alpha=0)
