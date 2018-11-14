@@ -121,7 +121,7 @@ def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
         kernel_size = int((nside_in/nside_out)**2.)
         y = keras.layers.Conv1D(
             filters, kernel_size=kernel_size, strides=kernel_size,
-            use_bias=use_bias, trainable=trainable)(y)
+            use_bias=use_bias, trainable=trainable, kernel_initializer='random_uniform')(y)
         return y
     return f
 
@@ -162,39 +162,39 @@ def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
         return y
     return f
 
-def ResConvNeighbours(
-    nside, kernel_size, filters, use_bias=False, trainable=True, BatchNorm=False):
-    """ keras layer performing a residual convolution block, convolving twice
-    over neighbour pixels
-
-    Parameters
-    ----------
-    nside : integer
-        Nside parameter for the input maps.
-        Must be a valid healpix Nside value
-    kernel_size: integer
-        dimension of the kernel.
-        Must be a valid number. For now only kernel_size=9 is admitted,
-        corresponding to the first neighbours convolution
-    filters : integer
-        number of filters in the convolution
-    use_bias : bool (default is False)
-        whether the layer uses a bias vector
-    trainable : bool (default is True)
-        wheter this is a trainable layer
-    """
-
-    def f(x):
-        shortcut = x
-        y = ConvNeighbours(nside, kernel_size, filters,use_bias=use_bias, trainable=trainable)(x)
-        shortcut = keras.layers.Lambda(x, output_shape=y._keras_shape)
-        if BatchNorm:
-            y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
-        y = keras.layers.Activation('relu')(y)
-        y = ConvNeighbours(nside, kernel_size, filters,use_bias=use_bias, trainable=trainable)(y)
-        if BatchNorm:
-            y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
-        y = keras.layers.Activation('relu')(y)
-        y = keras.layers.Add()([y, shortcut])
-        return y
-    return f
+# def ResConvNeighbours(
+#     nside, kernel_size, filters, use_bias=False, trainable=True, BatchNorm=False):
+#     """ keras layer performing a residual convolution block, convolving twice
+#     over neighbour pixels
+#
+#     Parameters
+#     ----------
+#     nside : integer
+#         Nside parameter for the input maps.
+#         Must be a valid healpix Nside value
+#     kernel_size: integer
+#         dimension of the kernel.
+#         Must be a valid number. For now only kernel_size=9 is admitted,
+#         corresponding to the first neighbours convolution
+#     filters : integer
+#         number of filters in the convolution
+#     use_bias : bool (default is False)
+#         whether the layer uses a bias vector
+#     trainable : bool (default is True)
+#         wheter this is a trainable layer
+#     """
+#
+#     def f(x):
+#         shortcut = x
+#         y = ConvNeighbours(nside, kernel_size, filters,use_bias=use_bias, trainable=trainable)(x)
+#         shortcut = keras.layers.Lambda(x, output_shape=(,3072, 32))(x)
+#         if BatchNorm:
+#             y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
+#         y = keras.layers.Activation('relu')(y)
+#         y = ConvNeighbours(nside, kernel_size, filters,use_bias=use_bias, trainable=trainable)(y)
+#         if BatchNorm:
+#             y = keras.layers.BatchNormalization(axis=1, epsilon=1e-5)(y)
+#         y = keras.layers.Activation('relu')(y)
+#         y = keras.layers.Add()([y, shortcut])
+#         return y
+#     return f

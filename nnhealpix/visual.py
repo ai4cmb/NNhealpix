@@ -81,7 +81,7 @@ def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
 
     if not cmap:
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
-        cmap.set_bad('white')
+        cmap.set_bad('white', alpha=0)
         cmap.set_under('white', alpha=0)
     if len(filters.shape)==1:
         filters = filters.reshape(1, len(filters))
@@ -105,7 +105,8 @@ def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
         axess = axes.flat
     for j, ax in enumerate(axess):
         filt = filter_img(filters[j])
-        filt[np.where((filt<filt_min) & (filt!=-np.inf))] = filt_min
+        filt[filt==-np.inf] = np.inf
+        filt[np.where(filt<filt_min)] = filt_min
         filt[np.where((filt>filt_max) & (filt!=np.inf))] = filt_max
         im = ax.imshow(filt, vmin=filt_min, vmax=filt_max)
         ax.set_axis_off()
@@ -116,7 +117,7 @@ def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
         fig.colorbar(im, cax=cbar_ax)
     return fig
 
-def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
+def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None, count=True):
     '''plot a set of filters.
 
     Parameters
@@ -136,11 +137,12 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
 
     if not cmap:
         cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
-        cmap.set_bad('white')
+        cmap.set_bad('white', alpha=0)
         cmap.set_under('white', alpha=0)
     if len(maps.shape)==1:
         maps = maps.reshape(1, len(maps))
     nmaps = len(maps)
+    totactive = nmaps
     maps_min = min
     maps_max = max
     if maps_min==None:
@@ -161,15 +163,24 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
     for j, ax in enumerate(axess):
         try:
             m = map_img(maps[j])
-            m[np.where((m<maps_min) & (m!=-np.inf))] = maps_min
+            m[m==-np.inf] = np.inf
+            m[np.where(m<maps_min)] = maps_min
             m[np.where((m>maps_max) & (m!=np.inf))] = maps_max
         except:
             m = map_img(maps[0])*0+np.inf
         im = ax.imshow(m, vmin=maps_min, vmax=maps_max)
         ax.set_axis_off()
         im.set_cmap(cmap)
+        if np.all(maps[j]==0):
+            totactive -= 1
+            line = np.arange(600)+100
+            ax.plot(line, line/2, color='black', lw=0.2, alpha=0.5)
     fig.subplots_adjust(right=0.8)
     if cbar:
         cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
         fig.colorbar(im, cax=cbar_ax)
-    return fig
+    if count:
+        print('Active nodes: ', totactive )
+        return totactive, fig
+    else:
+        return fig
