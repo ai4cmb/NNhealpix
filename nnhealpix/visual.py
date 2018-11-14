@@ -5,7 +5,7 @@ from keras.models import load_model
 from nnhealpix.map_ordering import *
 import matplotlib.pyplot as plt
 import matplotlib
-
+from keras import backend as K
 
 def filter_img(weights, order=1):
     '''Return a 2D image of a filter.
@@ -171,10 +171,11 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None, count=Tru
         im = ax.imshow(m, vmin=maps_min, vmax=maps_max)
         ax.set_axis_off()
         im.set_cmap(cmap)
-        if np.all(maps[j]==0):
-            totactive -= 1
-            line = np.arange(600)+100
-            ax.plot(line, line/2, color='black', lw=0.2, alpha=0.5)
+        try:
+            if np.all(map[j]==0):
+                totactive -= 1
+                line = np.arange(600)+100
+                ax.plot(line, line/2, color='black', lw=0.5, alpha=0.5)
     fig.subplots_adjust(right=0.8)
     if cbar:
         cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
@@ -184,3 +185,29 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None, count=Tru
         return totactive, fig
     else:
         return fig
+
+def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None, plot=True):
+    if not cmap:
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
+        #cmap = matplotlib.colorbar.cm.magma_r
+        cmap.set_bad('white', alpha=0)
+        cmap.set_under('white', alpha=0)
+    get_layer_output = K.function([model.layers[0].input],
+        [model.layers[layer].output])
+    layer_output = get_layer_output([X_val])[0]
+    nfilt = np.shape(layer_output)[2]
+    nval = np.shape(layer_output)[0]
+    nodes = np.ones((nval, nfilt))
+    for i in range(nval):
+        for j in range(nfilt):
+            nodes[i, j] = np.std(layer_output[i, :, j])
+    if binary:
+        nodes[nodes>0] = 1
+    if nval>20:
+        fig = plt.figure(figsize=(nfilt//30, nval//20))
+    else:
+        fig = plt.figure(figsize=(nfilt//30, 1))
+    plt.imshow(nodes, cmap=cmap, vmin=0, aspect='auto')
+    if not plot:
+        plt.close()
+    return nodes, fig
