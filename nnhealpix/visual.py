@@ -98,7 +98,7 @@ def plot_filters(filters, cmap=None, cbar=False, min=None, max=None):
         ncol = 8
     else:
         ncol = nfilt
-    nrow= round(nfilt/ncol+0.5)
+    nrow= round(nfilt/ncol+0.4)
     fig = plt.figure(figsize=(8, 4))
     axes = fig.subplots(nrows=nrow, ncols=ncol)
     if nfilt == 1:
@@ -161,7 +161,7 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
         ncol = 8
     else:
         ncol = nmaps
-    nrow= round(nmaps/ncol+0.5)
+    nrow= round(nmaps/ncol+0.4)
     fig = plt.figure(figsize=(2*ncol, 1*nrow))
     axes = fig.subplots(nrows=nrow, ncols=ncol)
     if nmaps == 1:
@@ -236,10 +236,12 @@ def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None, plot=True):
             nodes[i, j] = np.std(layer_output[i, :, j])
     if binary:
         nodes[nodes>0] = 1
-    if nval>20:
+    if nval>20 & nfilt>30:
         fig = plt.figure(figsize=(nfilt//30, nval//20))
-    else:
+    elif nval<20 & nfilt>30:
         fig = plt.figure(figsize=(nfilt//30, 1))
+    else:
+        fig = plt.figure(figsize=(1, 1))
     plt.imshow(nodes, cmap=cmap, vmin=0, aspect='auto')
     if not plot:
         plt.close()
