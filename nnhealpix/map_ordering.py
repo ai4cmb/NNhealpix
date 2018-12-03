@@ -26,10 +26,10 @@ def dgrade_file_name(nside_in, nside_out):
     )
 
 
-def filter_file_name(nside, order):
+def filter9_file_name(nside, order):
     return os.path.join(
         DATADIR,
-        'filter_nside{0}_order{1}.npz'.format(nside, order),
+        'filter9_nside{0}_order{1}.npz'.format(nside, order),
     )
 
 
@@ -99,7 +99,7 @@ def dgrade(nside_in, nside_out):
         return result
 
 
-def pixel_1st_neighbours(ipix, nside):
+def pixel_first_neighbours(ipix, nside):
     """ find first pixel get_all_neighbours in the healpix ring scheme
     Parameters
     ----------
@@ -166,7 +166,49 @@ def pixel_2nd_neighbours(ipix, nside):
         return result
 
 
-def filter(nside, order=1):
+def neighbours25(nside, ipix):
+    nfn = hp.pixelfunc.get_all_neighbours
+    result = np.empty(25, dtype='int')
+
+    # Center of the 5×5 tile
+    result[0] = ipix
+
+    # The first ring is easy to find
+    result[1:9] = nfn(nside, ipix)
+
+    # For the pixels in the range 9…24 things are more complicated
+    # We leave the corners out, as they need more checks
+
+    loc = nfn(nside, result[1])
+    result[10:12] = loc[0:2]
+    result[9] = loc[7]
+
+    result[13:16] = nfn(nside, result[3])[1:4]
+    result[17:20] = nfn(nside, result[5])[3:6]
+    result[21:24] = nfn(nside, result[7])[5:8]
+
+    # We are left with the outermost corners: #12, #16, #20, #24 The
+    # position of the corner can always be determined by its two
+    # adjacent pixels that are not along the N/S/E/W directions
+
+    for corneridx, pair in [
+        (12, [(11, 2), (13, 0)]),
+        (16, [(15, 4), (17, 2)]),
+        (20, [(19, 6), (21, 4)]),
+        (24, [(9, 6), (23, 0)]),
+    ]:
+        first, second = pair
+        if result[first[0]] >= 0:
+            result[corneridx] = nfn(nside, result[first[0]])[first[1]]
+        elif result[second[0]] >= 0:
+            result[corneridx] = nfn(nside, result[second[0]])[second[1]]
+        else:
+            result[corneridx] = -1
+
+    return result
+
+
+def filter9(nside, order=1):
     """ map ordering to implement a convolutional neural network with a
     kernel convolving the first neighbour of each pixel on an healpix map
 
@@ -178,22 +220,20 @@ def filter(nside, order=1):
 
     Returns
     -------
-    filter : array
+    filter9 : array
         array defining the re-ordering of the input map to perform the
         convolution
     """
 
-    assert hp.isnsideok(nside, nest=True), \
-        'invalid nside ({0}) in call to filter'.format(nside)
+    assert hp.isnsideok(nside, nest=True), 'invalid nside ({0}) in call to filter9'.format(nside)
 
     order_fn = {
-        1: pixel_1st_neighbours,
+        1: pixel_first_neighbours,
         2: pixel_2nd_neighbours,
     }
 
-    assert order in order_fn.keys(), \
-        ("invalid order ({0}) passed to filter, valid values are {1}"
-         .format(order, ', '.join([str(x) for x in order_fn.keys()])))
+    assert order in order_fn.keys(), ("invalid order ({0}) passed to filter9, valid values are {1}"
+                                      .format(order, ', '.join([str(x) for x in order_fn.keys()])))
 
     result = np.empty(0, dtype='int')
     fn = order_fn[order]
@@ -201,7 +241,7 @@ def filter(nside, order=1):
         result = np.concatenate((result, fn(i, nside)))
 
     result[result == -1] = hp.nside2npix(nside)
-    file_name = filter_file_name(nside, order)
+    file_name = filter9_file_name(nside, order)
     write_ancillary_file(file_name, result)
     return result
 
@@ -221,7 +261,7 @@ def write_ancillary_file(file_name, array):
         np.savez_compressed(file_name, arr=array)
 
 
-def read_filter(nside, order):
+def read_filter9(nside, order):
     """ reads from disk the ordering array to perform the first neighbours
     filtering
 
@@ -232,7 +272,7 @@ def read_filter(nside, order):
         Must be a valid healpix Nside value
     """
 
-    file_name = filter_file_name(nside, order)
+    file_name = filter9_file_name(nside, order)
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with np.load(file_name) as f:
         return f['arr']
