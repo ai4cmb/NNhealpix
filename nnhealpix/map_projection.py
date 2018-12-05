@@ -85,7 +85,7 @@ def img2map(
     # half the resolution of the map.
     map_resolution = 0.5 * hp.nside2resol(nside, arcmin=False)
     nx, ny = [max(1, int(span / map_resolution))
-              for span in (delta_phi, delta_theta)]
+              for span in (delta_theta, delta_phi)]
     theta_proj = np.linspace(
         (np.pi - delta_theta) / 2,
         (np.pi + delta_theta) / 2,
@@ -247,7 +247,7 @@ class projectimages:
                 np.random.rand() * 360.0,
                 np.random.rand() * 360.0,
                 np.random.rand() * 360.0,
-                ))
+            ))
         pixels = np.zeros(hp.nside2npix(self.nside), dtype='float')
         img2map(
             self.images[imgidx],
