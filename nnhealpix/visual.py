@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 import healpy as hp
 import numpy as np
 import keras
@@ -5,11 +7,22 @@ from keras.models import load_model
 from nnhealpix.map_ordering import *
 import matplotlib.pyplot as plt
 import matplotlib
+from matplotlib.colors import LinearSegmentedColormap
 from keras import backend as K
+
+CMAP_GRAY_TO_BLACK = LinearSegmentedColormap.from_list(
+    "", ["#FEFAFA", "black"])
+CMAP_WHITE_TO_BLACK = LinearSegmentedColormap.from_list(
+    "", ["#FEFAFA", "black"])
 
 
 def val2str(val):
-    'Convert VAL (number) into a string'
+    '''Convert VAL (number) into a string
+
+    This function works like "str", but it substitutes any trailing
+    hyphen sign with a Unicode minus sign, which is typographically
+    more correct.
+    '''
     s = str(val)
     if s[0] == '-':
         # Use the Unicode minus sign
@@ -19,7 +32,7 @@ def val2str(val):
 
 
 def draw_filter(weights, cmap, sub=None, order=1,
-                minimum=None, maximum=None,
+                vmin=None, vmax=None,
                 show_values=False, val2str=val2str):
     '''Return a 2D image of a filter.
 
@@ -50,8 +63,8 @@ def draw_filter(weights, cmap, sub=None, order=1,
     pix_num = fn(ipix, nside)
     m = np.zeros(hp.nside2npix(nside))+np.inf
     m[pix_num] = weights
-    hp.gnomview(m, reso=1.8, rot=[0, 2], sub=sub, cmap=cmap,
-                min=minimum, max=maximum, notext=True, xsize=600)
+    hp.gnomview(m, reso=1.8, rot=[0, 2], sub=sub, cmap=cmap, cbar=False,
+                min=vmin, max=vmax, notext=True, xsize=600)
 
     if show_values:
         axis = plt.gcf().gca()
@@ -62,6 +75,68 @@ def draw_filter(weights, cmap, sub=None, order=1,
                           verticalalignment='center',
                           color='black',
                           bbox=dict(facecolor='white', linewidth=0, alpha=0.7))
+
+
+def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
+                 show_values=False, val2str=val2str):
+    '''plot a set of filters.
+
+    Parameters
+    ----------
+    filters: array
+        array of filters to plot
+    cmap: color map
+        if None a pick/black color map will be used in the plot
+    cbar: boolean
+        whether or not to add colorbar to the plot.
+        Default is False
+    vmin, vmax: float
+        min and max value for the color map, if None they are the min and max
+        values of the set of filters
+    show_values: Boolean (default: False)
+        if True, display the value of the filter on each pixel
+    val2str: function (default: str)
+        function to convert the value of each pixel in the filter into a
+        string, used when `show_values` is True.
+    Returns
+    ------------
+    fig: figure
+    '''
+
+    if not cmap:
+        cmap = CMAP_GRAY_TO_BLACK
+        cmap.set_bad('white', alpha=0)
+        cmap.set_under('white', alpha=0)
+    if len(filters.shape) == 1:
+        filters = filters.reshape(1, len(filters))
+    nfilt = len(filters)
+    filt_min, filt_max = vmin, vmax
+    if filt_min is None:
+        filt_min = np.min(filters)
+    if filt_max is None:
+        filt_max = np.max(filters)
+    ncol = min(8, nfilt)
+    nrow = round(nfilt / ncol + 0.4)
+    for j in range(nrow * ncol):
+        draw_filter(filters[j], sub=(nrow, ncol, j + 1), cmap=cmap,
+                    vmin=filt_min, vmax=filt_max,
+                    show_values=show_values, val2str=val2str)
+        fig = plt.gcf()
+        ax = fig.gca()
+        ax.set_title('Filter #{0}'.format(j))
+        ax.set_axis_off()
+
+    fig.set_size_inches(8, 4)
+    fig.subplots_adjust(right=0.8)
+    if cbar:
+        fig.subplots_adjust(bottom=0.0, top=1.0, left=0.0, right=0.55)
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+        #fig.colorbar(im, cax=cbar_ax)
+        sm = plt.cm.ScalarMappable(
+            cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        sm._A = []
+        fig.colorbar(sm, cax=cbar_ax)
+    return fig
 
 
 def map_img(map_in, order=1):
@@ -84,63 +159,7 @@ def map_img(map_in, order=1):
     return img
 
 
-def plot_filters(filters, cmap=None, cbar=False, minimum=None, maximum=None,
-                 show_values=False, val2str=val2str):
-    '''plot a set of filters.
-
-    Parameters
-    ----------
-    filters: array
-        array of filters to plot
-    cmap: color map
-        if None a pick/black color map will be used in the plot
-    cbar: boolean
-        whether or not to add colorbar to the plot.
-        Default is False
-    minimum, maximum: float
-        min and max value for the color map, if None they are the min and max
-        values of the set of filters
-    show_values: Boolean (default: False)
-        if True, display the value of the filter on each pixel
-    val2str: function (default: str)
-        function to convert the value of each pixel in the filter into a
-        string, used when `show_values` is True.
-    Returns
-    ------------
-    fig: figure
-    '''
-
-    if not cmap:
-        cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-            "", ["#FEFAFA", "black"])
-        cmap.set_bad('white', alpha=0)
-        cmap.set_under('white', alpha=0)
-    if len(filters.shape) == 1:
-        filters = filters.reshape(1, len(filters))
-    nfilt = len(filters)
-    filt_min, filt_max = minimum, maximum
-    if filt_min is None:
-        filt_min = np.min(filters)
-    if filt_max is None:
-        filt_max = np.max(filters)
-    ncol = min(8, nfilt)
-    nrow = round(nfilt / ncol + 0.4)
-    fig = plt.figure(figsize=(8, 4))
-    for j in range(nrow * ncol):
-        draw_filter(filters[j], sub=(nrow, ncol, j + 1), cmap=cmap,
-                    minimum=filt_min, maximum=filt_max,
-                    show_values=show_values, val2str=val2str)
-        fig.gca().set_title('Filter #{0}'.format(j))
-        fig.gca().set_axis_off()
-
-    fig.subplots_adjust(right=0.8)
-    if cbar:
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-        fig.colorbar(im, cax=cbar_ax)
-    return fig
-
-
-def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
+def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None):
     '''plot a the effect of filters on maps in a given layer of the network.
 
     Parameters
@@ -152,7 +171,7 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
     cbar: boolean
         whether or not to add colorbar to the plot.
         Default is False
-    min, max: float
+    vmin, vmax: float
         min and max value for the color map, if None they are the min and max
         values of the set of maps
     count: boolean
@@ -165,26 +184,21 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
     '''
 
     if not cmap:
-        cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-            "", ["#FEFAFA", "black"])
+        cmap = CMAP_GRAY_TO_BLACK
         cmap.set_bad('white', alpha=0)
         cmap.set_under('white', alpha=0)
     if len(maps.shape) == 1:
         maps = maps.reshape(1, len(maps))
     nmaps = len(maps)
     totactive = nmaps
-    maps_min = min
-    maps_max = max
+    maps_min, maps_max = vmin, vmax
     if maps_min == None:
-        maps_min = maps.min()
+        maps_min = np.min(maps)
     if maps_max == None:
-        maps_max = maps.max()
-    if nmaps >= 8:
-        ncol = 8
-    else:
-        ncol = nmaps
-    nrow = round(nmaps/ncol+0.4)
-    fig = plt.figure(figsize=(2*ncol, 1*nrow))
+        maps_max = np.max(maps)
+    ncol = min(8, nmaps)
+    nrow = round(nmaps / ncol + 0.4)
+    fig = plt.figure(figsize=(2 * ncol, 1 * nrow))
     axes = fig.subplots(nrows=nrow, ncols=ncol)
     if nmaps == 1:
         axess = [axes]
@@ -193,9 +207,9 @@ def plot_layer_output(maps, cmap=None, cbar=False, min=None, max=None):
     for j, ax in enumerate(axess):
         try:
             m = map_img(maps[j])
-            m[m == -np.inf] = np.inf
+            m[np.isinf(m)] = np.inf
             m[np.where(m < maps_min)] = maps_min
-            m[np.where((m > maps_max) & (m != np.inf))] = maps_max
+            m[np.where((m > maps_max) & np.isfinite(m))] = maps_max
         except:
             m = map_img(maps[0])*0+np.inf
         im = ax.imshow(m, vmin=maps_min, vmax=maps_max)
@@ -243,8 +257,7 @@ def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None, plot=True):
     '''
 
     if not cmap:
-        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("",
-                                                                   ["white", "black"])
+        cmap = CMAP_WHITE_TO_BLACK
         # cmap = matplotlib.colorbar.cm.magma_r
         cmap.set_bad('white', alpha=0)
         cmap.set_under('white', alpha=0)
@@ -259,9 +272,9 @@ def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None, plot=True):
             nodes[i, j] = np.std(layer_output[i, :, j])
     if binary:
         nodes[nodes > 0] = 1
-    if nval > 20 & nfilt > 30:
+    if nval > 20 and nfilt > 30:
         fig = plt.figure(figsize=(nfilt//30, nval//20))
-    elif nval < 20 & nfilt > 30:
+    elif nval < 20 and nfilt > 30:
         fig = plt.figure(figsize=(nfilt//30, 1))
     else:
         fig = plt.figure(figsize=(1, 1))
