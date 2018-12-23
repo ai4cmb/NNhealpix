@@ -205,6 +205,7 @@ def filter_plot_size(layout, basesize):
 
 
 def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
+                 show_titles=False, titlefn=None,
                  show_values=False, val2str=val2str, basesize=3):
     '''plot a set of filters.
 
@@ -220,6 +221,12 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
     vmin, vmax: float
         min and max value for the color map, if None they are the min and max
         values of the set of filters
+    show_titles: Boolean (default: False)
+        if True, write a title above each filter
+    titlefn: function (default: None)
+        a function returning a string for the title of each filter. It should
+        take one integer parameter, which is the progressive number of the filter
+        starting from zero
     show_values: Boolean (default: False)
         if True, display the value of the filter on each pixel
     val2str: function (default: str)
@@ -255,7 +262,14 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
                          vmin=filt_min, vmax=filt_max,
                          show_values=show_values, val2str=val2str)
 
-        ax.set_title('Filter #{0}'.format(j))
+        if show_titles:
+            if titlefn:
+                title = titlefn(j)
+            else:
+                title = 'Filter #{0}'.format(j)
+
+            ax.set_title(title)
+
         ax.set_axis_off()
 
     if cbar:
