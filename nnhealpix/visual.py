@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import healpy as hp
+import healpy.projaxes as pa
 import numpy as np
 import keras
 from keras.models import load_model
@@ -31,8 +32,8 @@ def val2str(val):
     return s
 
 
-def draw_filter(weights, cmap, sub=None, order=1,
-                vmin=None, vmax=None,
+def draw_filter(fig, weights, extent, cmap, sub=None, order=1,
+                vmin=None, vmax=None, xsize=600, ysize=600,
                 show_values=False, val2str=val2str):
     '''Return a 2D image of a filter.
 
@@ -63,22 +64,148 @@ def draw_filter(weights, cmap, sub=None, order=1,
     pix_num = fn(ipix, nside)
     m = np.zeros(hp.nside2npix(nside))+np.inf
     m[pix_num] = weights
-    hp.gnomview(m, reso=1.8, rot=[0, 2], sub=sub, cmap=cmap, cbar=False,
-                min=vmin, max=vmax, notext=True, xsize=600)
+
+    ax = pa.HpxGnomonicAxes(fig, extent, rot=[0, 2])
+    fig.add_axes(ax)
+
+    ax.projmap(m, reso=1.8, vmin=vmin, vmax=vmax,
+               xsize=xsize, ysize=ysize, cmap=cmap)
 
     if show_values:
-        axis = plt.gcf().gca()
         for i, curpix in enumerate(pix_num):
             theta, phi = hp.pix2ang(nside, curpix)
-            axis.projtext(theta, phi, val2str(weights[i]),
-                          horizontalalignment='center',
-                          verticalalignment='center',
-                          color='black',
-                          bbox=dict(facecolor='white', linewidth=0, alpha=0.7))
+            ax.projtext(theta, phi, val2str(weights[i]),
+                        horizontalalignment='center',
+                        verticalalignment='center',
+                        color='black',
+                        bbox=dict(facecolor='white', linewidth=0, alpha=0.7))
+
+    return ax
+
+
+def filter_plot_layout(num_of_filters):
+    '''Calculate a nice layout for a set of filters to be plotted with `plot_filters`.
+
+    This function returns a tuple containing the number of plots per
+    row in each of the rows that are produced via a call to
+    `plot_filters`.
+
+    Example
+    -------
+
+    >>> filter_plot_layout(7)
+    (4, 3)
+
+    The result indicates that the best way to plot 7 filters in the same plot
+    is to group them in two rows: 4 in the first row, and 3 in the second one.
+    '''
+
+    DEFAULT_LAYOUTS = {
+        1: (1,),
+        2: (2,),
+        3: (2, 1),
+        4: (2, 2),
+        5: (3, 2),
+        6: (3, 3),
+        7: (4, 3),
+        8: (3, 3, 2),
+        9: (3, 3, 3),
+        10: (4, 4, 2),
+        11: (3, 3, 3, 2),
+
+        # Starting from here, the algorithm below would produce the same
+        # result. We include them here explicitly for the sake of clarity
+
+        12: (4, 4, 4),
+        13: (4, 3, 3, 3),
+        14: (4, 4, 3, 3),
+        15: (4, 4, 4, 3),
+        16: (4, 4, 4, 4),
+    }
+
+    # If the number of filters is low, use the default layouts listed above
+    if num_of_filters in DEFAULT_LAYOUTS:
+        return DEFAULT_LAYOUTS[num_of_filters]
+
+    # In any other case, use an algorithm to calculate how many plots
+    # per row should be created. The algorithm tries to follow these
+    # rules:
+    #
+    #   1. Never place more than 4 plots per row
+    #   2. Never use less than 3 plots per row
+    #   3. Group 4-plot rows and 3-plot rows together (i.e., do not
+    #      alternate between 4-plot and 3-plot rows), so that all
+    #      the 4-plot rows come before the 3-plot rows.
+
+    nrows = num_of_filters // 4
+    if num_of_filters % 4 > 0:
+        nrows += 1
+
+    result = [4] * nrows
+    rowidx = nrows - 1
+    while sum(result) > num_of_filters:
+        result[rowidx] -= 1
+        rowidx -= 1
+
+    return result
+
+
+def filter_plot_axis_extents(layout, cbar_space=False):
+    nrows, ncols = len(layout), max(layout)
+
+    width = 1.0
+    if cbar_space:
+        width -= 0.15
+
+    height = 1.0
+
+    plotwidth = width / ncols
+    plotheight = height / nrows
+
+    extents = []
+    top = height
+    for cols_in_row in layout:
+        left = (ncols - cols_in_row) * plotwidth / 2
+
+        for curcol in range(cols_in_row):
+            # The 0.8 factor is used to make room for the title
+            extents.append(
+                (left, top - plotheight, plotwidth, plotheight * 0.8))
+            left += plotwidth
+
+        top -= plotheight
+
+    return extents
+
+
+def filter_plot_size(layout, basesize):
+    '''Return the size (in inches) of the plot produced by `plot_filters`
+
+    Parameters
+    ----------
+    layout: list of tuples
+        the result of a call to `filter_plot_layout`
+    basesize: float
+        the size (in inches) to be used to plot each of the filters
+
+    Returns
+    -------
+    A 2-element tuple containing the width and height in inches of the plot.
+    '''
+
+    nrows, ncols = len(layout), max(layout)
+
+    # Each square containing a filter will be placed in a square
+    # whose side is "basesize" inches long
+
+    width = min(ncols * basesize, 12)
+    height = nrows * basesize
+
+    return (width, height)
 
 
 def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
-                 show_values=False, val2str=val2str):
+                 show_values=False, val2str=val2str, basesize=3):
     '''plot a set of filters.
 
     Parameters
@@ -98,6 +225,9 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
     val2str: function (default: str)
         function to convert the value of each pixel in the filter into a
         string, used when `show_values` is True.
+    basesize: double (default: 4)
+        size (in inches) of one of the Gnomonic views to be displayed
+
     Returns
     ------------
     fig: figure
@@ -107,35 +237,35 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
         cmap = CMAP_GRAY_TO_BLACK
         cmap.set_bad('white', alpha=0)
         cmap.set_under('white', alpha=0)
-    if len(filters.shape) == 1:
-        filters = filters.reshape(1, len(filters))
+
     nfilt = len(filters)
     filt_min, filt_max = vmin, vmax
     if filt_min is None:
         filt_min = np.min(filters)
     if filt_max is None:
         filt_max = np.max(filters)
-    ncol = min(8, nfilt)
-    nrow = round(nfilt / ncol + 0.4)
-    for j in range(nrow * ncol):
-        draw_filter(filters[j], sub=(nrow, ncol, j + 1), cmap=cmap,
-                    vmin=filt_min, vmax=filt_max,
-                    show_values=show_values, val2str=val2str)
-        fig = plt.gcf()
-        ax = fig.gca()
+
+    layout = filter_plot_layout(nfilt)
+    fig = plt.figure(figsize=filter_plot_size(layout, basesize))
+
+    extents = filter_plot_axis_extents(layout, cbar_space=cbar is not None)
+
+    for j in range(len(extents)):
+        print('Plot ', j, ': ', extents[j])
+        ax = draw_filter(fig, filters[j], extents[j], cmap=cmap,
+                         vmin=filt_min, vmax=filt_max,
+                         show_values=show_values, val2str=val2str)
+
         ax.set_title('Filter #{0}'.format(j))
         ax.set_axis_off()
 
-    fig.set_size_inches(8, 4)
-    fig.subplots_adjust(right=0.8)
     if cbar:
-        fig.subplots_adjust(bottom=0.0, top=1.0, left=0.0, right=0.55)
-        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
-        #fig.colorbar(im, cax=cbar_ax)
+        cbar_ax = fig.add_axes([0.9, 0.15, 0.05, 0.7])
         sm = plt.cm.ScalarMappable(
             cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
         sm._A = []
         fig.colorbar(sm, cax=cbar_ax)
+
     return fig
 
 
