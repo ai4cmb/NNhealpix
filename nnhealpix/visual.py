@@ -371,7 +371,9 @@ def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None):
     return fig
 
 
-def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None, plot=True):
+def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None,
+                     show_titles=False, titlefn=None,
+                     figsize=None, plot=True):
     '''return a map of the active nodes in a give layer and plot it
 
     Parameters
@@ -388,6 +390,15 @@ def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None, plot=True):
         Default is False.
     cmap: color map
         if None a pick/black color map will be used in the plot.
+    show_titles: Boolean (default: False)
+        if True, write a title above each filter
+    titlefn: function (default: None)
+        a function returning a string for the title of each filter. It should
+        take one integer parameter, which is the progressive number of the filter
+        starting from zero
+    figsize: 2-element tuple
+        size of the figure, in inches. If not provided, a sensible size
+        will be figured out
     plot: boolean
         if True a plot with the map of the active nodes in the layer will be
         shown. Default is True.
@@ -415,15 +426,30 @@ def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None, plot=True):
             nodes[i, j] = np.std(layer_output[i, :, j])
     if binary:
         nodes[nodes > 0] = 1
-    if nval > 20 and nfilt > 30:
-        fig = plt.figure(figsize=(nfilt//30, nval//20))
-    elif nval < 20 and nfilt > 30:
-        fig = plt.figure(figsize=(nfilt//30, 1))
+
+    if figsize:
+        intsize = figsize
     else:
-        fig = plt.figure(figsize=(1, 1))
+        if nval > 20 and nfilt > 30:
+            intfigsize = (nfilt//30, nval//20)
+        elif nval < 20 and nfilt > 30:
+            intfigsize = (nfilt//30, 1)
+        else:
+            intfigsize = (1, 1)
+
+    fig = plt.figure(figsize=intfigsize)
     plt.imshow(nodes, cmap=cmap, vmin=0, aspect='auto')
-    plt.xticks(range(nfilt), ['#' + str(i) for i in range(nfilt)])
+
+    if show_titles:
+        if titlefn:
+            titles = [titlefn(i) for i in range(nfilt)]
+        else:
+            titles = ['#{0}'.format(i) for i in range(nfilt)]
+
+        plt.xticks(range(nfilt), titles)
+
     plt.yticks(range(nval), [str(i) for i in range(nval)])
+
     if not plot:
         plt.close()
     return nodes, fig
