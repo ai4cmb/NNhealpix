@@ -251,7 +251,6 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
     extents = filter_plot_axis_extents(layout, cbar_space=cbar is not None)
 
     for j in range(len(extents)):
-        print('Plot ', j, ': ', extents[j])
         ax = draw_filter(fig, filters[j], extents[j], cmap=cmap,
                          vmin=filt_min, vmax=filt_max,
                          show_values=show_values, val2str=val2str)
