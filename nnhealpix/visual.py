@@ -428,7 +428,7 @@ def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None,
         nodes[nodes > 0] = 1
 
     if figsize:
-        intsize = figsize
+        intfigsize = figsize
     else:
         if nval > 20 and nfilt > 30:
             intfigsize = (nfilt//30, nval//20)
