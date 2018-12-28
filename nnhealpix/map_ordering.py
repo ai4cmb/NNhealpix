@@ -122,11 +122,12 @@ def pixel_1st_neighbours(ipix, nside):
     corresponding pixel number will be -1
     """
     assert hp.isnsideok(nside, nest=True), \
-        'invalid nside {0} in call to pixel_first_neighbours'.format(nside)
+        'invalid nside {0} in call to pixel_1st_neighbours'.format(nside)
 
-    pix_array = hp.pixelfunc.get_all_neighbours(nside, ipix)
-    pix_num = np.insert(pix_array, 4, ipix)
-    return pix_num
+    pix_array = np.empty(9, dtype='int')
+    pix_array[0] = ipix
+    pix_array[1:9] = hp.pixelfunc.get_all_neighbours(nside, ipix)
+    return pix_array
 
 
 def pixel_2nd_neighbours(ipix, nside):
@@ -166,6 +167,48 @@ def pixel_2nd_neighbours(ipix, nside):
         return result
 
 
+def neighbours25(nside, ipix):
+    nfn = hp.pixelfunc.get_all_neighbours
+    result = np.empty(25, dtype='int')
+
+    # Center of the 5×5 tile
+    result[0] = ipix
+
+    # The first ring is easy to find
+    result[1:9] = nfn(nside, ipix)
+
+    # For the pixels in the range 9…24 things are more complicated
+    # We leave the corners out, as they need more checks
+
+    loc = nfn(nside, result[1])
+    result[10:12] = loc[0:2]
+    result[9] = loc[7]
+
+    result[13:16] = nfn(nside, result[3])[1:4]
+    result[17:20] = nfn(nside, result[5])[3:6]
+    result[21:24] = nfn(nside, result[7])[5:8]
+
+    # We are left with the outermost corners: #12, #16, #20, #24 The
+    # position of the corner can always be determined by its two
+    # adjacent pixels that are not along the N/S/E/W directions
+
+    for corneridx, pair in [
+        (12, [(11, 2), (13, 0)]),
+        (16, [(15, 4), (17, 2)]),
+        (20, [(19, 6), (21, 4)]),
+        (24, [(9, 6), (23, 0)]),
+    ]:
+        first, second = pair
+        if result[first[0]] >= 0:
+            result[corneridx] = nfn(nside, result[first[0]])[first[1]]
+        elif result[second[0]] >= 0:
+            result[corneridx] = nfn(nside, result[second[0]])[second[1]]
+        else:
+            result[corneridx] = -1
+
+    return result
+
+
 def filter(nside, order=1):
     """ map ordering to implement a convolutional neural network with a
     kernel convolving the first neighbour of each pixel on an healpix map
@@ -183,17 +226,16 @@ def filter(nside, order=1):
         convolution
     """
 
-    assert hp.isnsideok(nside, nest=True), \
-        'invalid nside ({0}) in call to filter'.format(nside)
+    assert hp.isnsideok(
+        nside, nest=True), 'invalid nside ({0}) in call to filter'.format(nside)
 
     order_fn = {
         1: pixel_1st_neighbours,
         2: pixel_2nd_neighbours,
     }
 
-    assert order in order_fn.keys(), \
-        ("invalid order ({0}) passed to filter, valid values are {1}"
-         .format(order, ', '.join([str(x) for x in order_fn.keys()])))
+    assert order in order_fn.keys(), ("invalid order ({0}) passed to filter, valid values are {1}"
+                                      .format(order, ', '.join([str(x) for x in order_fn.keys()])))
 
     result = np.empty(0, dtype='int')
     fn = order_fn[order]

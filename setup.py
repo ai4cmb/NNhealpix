@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='nnhealpix',
-      version='0.1',
+      version='0.2.0',
       description='',
       url='',
       author='Nicoletta Krachmalnicoff, Maurizio Tomasi',

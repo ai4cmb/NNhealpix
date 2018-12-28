@@ -25,3 +25,7 @@ git clone git@github.com:NicolettaK/HealpixNN.git
 To run a suite of tests, you must have either `nosetests` or
 `pytest`. Just run `nosetests` or `pytest` within the `HealpixNN`
 folder.
+
+## License
+
+The library is released under a MIT license. See the file LICENSE for more information.
