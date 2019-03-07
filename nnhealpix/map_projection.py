@@ -38,13 +38,7 @@ def binned_map(signal, pixidx, mappixels, hits, reset_map=True):
 
 
 def img2map(
-        img,
-        resultmap,
-        resulthits,
-        delta_theta,
-        delta_phi,
-        rot=np.eye(3),
-        reset_map=True,
+    img, resultmap, resulthits, delta_theta, delta_phi, rot=np.eye(3), reset_map=True
 ):
     """Projection of a 2D image on a Healpix map.
 
@@ -84,18 +78,9 @@ def img2map(
     # the image frame. We use as a rule of thumb a spacing that is
     # half the resolution of the map.
     map_resolution = 0.5 * hp.nside2resol(nside, arcmin=False)
-    nx, ny = [max(1, int(span / map_resolution))
-              for span in (delta_theta, delta_phi)]
-    theta_proj = np.linspace(
-        (np.pi - delta_theta) / 2,
-        (np.pi + delta_theta) / 2,
-        nx,
-    )
-    phi_proj = np.linspace(
-        delta_phi / 2,
-        -delta_phi / 2,
-        ny,
-    )
+    nx, ny = [max(1, int(span / map_resolution)) for span in (delta_theta, delta_phi)]
+    theta_proj = np.linspace((np.pi - delta_theta) / 2, (np.pi + delta_theta) / 2, nx)
+    phi_proj = np.linspace(delta_phi / 2, -delta_phi / 2, ny)
 
     # In order to fire so many rays, we need to interpolate between
     # adjacent pixels in the image matrix
@@ -149,14 +134,14 @@ def img2healpix(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
     assert delta_phi < 180.0
 
     result = np.zeros(hp.nside2npix(nside))
-    hits = np.zeros(result.size, dtype='int')
+    hits = np.zeros(result.size, dtype="int")
     img2map(img, result, hits, delta_theta, delta_phi, rot, reset_map=False)
 
     return result, hits
 
 
 class projectimages:
-    '''Project a randomly chosen set of 2D images on Healpix maps.
+    """Project a randomly chosen set of 2D images on Healpix maps.
 
     This class returns an iterator that produces a set of Healpix maps
     given a number of 2D images.
@@ -201,7 +186,7 @@ class projectimages:
         print('Image index: {0}, digit is {1}'.format(idx, y_train[idx]))
         healpy.mollview(pixels)
     `````
-    '''
+    """
 
     def __init__(self, images, nside, delta_theta, delta_phi, rot=None, num=None):
         self.images = images
@@ -210,7 +195,7 @@ class projectimages:
         self.delta_phi = delta_phi
         self.num = num
         self.idx = 0
-        self.hitmap = np.zeros(hp.nside2npix(self.nside), dtype='int')
+        self.hitmap = np.zeros(hp.nside2npix(self.nside), dtype="int")
         self.rot = rot
 
     def __iter__(self):
@@ -243,12 +228,14 @@ class projectimages:
         if self.rot:
             rotation = self.rot
         else:
-            rotation = hp.rotator.Rotator(rot=(
-                np.random.rand() * 360.0,
-                np.random.rand() * 360.0,
-                np.random.rand() * 360.0,
-            ))
-        pixels = np.zeros(hp.nside2npix(self.nside), dtype='float')
+            rotation = hp.rotator.Rotator(
+                rot=(
+                    np.random.rand() * 360.0,
+                    np.random.rand() * 360.0,
+                    np.random.rand() * 360.0,
+                )
+            )
+        pixels = np.zeros(hp.nside2npix(self.nside), dtype="float")
         img2map(
             self.images[imgidx],
             pixels,
@@ -256,7 +243,7 @@ class projectimages:
             delta_theta,
             delta_phi,
             rotation,
-            reset_map=False    # We're not interested in "hits"
+            reset_map=False,  # We're not interested in "hits"
         )
 
         self.idx += 1
@@ -293,13 +280,13 @@ def img2healpix_planar(img, nside, thetac, phic, delta_theta, delta_phi, rot=Non
     imgf = np.flip(img, axis=2)
     imgf = np.array(imgf)
     print(img.shape[1], img.shape[2])
-    data = imgf.reshape(img.shape[0], img.shape[1]*img.shape[2])
+    data = imgf.reshape(img.shape[0], img.shape[1] * img.shape[2])
     xsize = img.shape[1]
     ysize = img.shape[2]
-    theta_min = thetac-delta_theta/2.
-    theta_max = thetac+delta_theta/2.
-    phi_max = phic+delta_phi/2.
-    phi_min = phic-delta_phi/2.
+    theta_min = thetac - delta_theta / 2.0
+    theta_max = thetac + delta_theta / 2.0
+    phi_max = phic + delta_phi / 2.0
+    phi_min = phic - delta_phi / 2.0
     theta_min = np.radians(theta_min)
     theta_max = np.radians(theta_max)
     phi_min = np.radians(phi_min)
@@ -319,22 +306,23 @@ def img2healpix_planar(img, nside, thetac, phic, delta_theta, delta_phi, rot=Non
         flg *= np.where(phi_r < phi1, 0, 1)
         flg *= np.where(phi_r > phi2, 0, 1)
     else:
-        phi1 = 2.*np.pi+phi_min
+        phi1 = 2.0 * np.pi + phi_min
         phi2 = phi_max
         flg *= np.where((phi2 < phi_r) & (phi_r < phi1), 0, 1)
-        img_phi_temp[img_phi_temp < 0] = 2*np.pi+img_phi_temp[img_phi_temp < 0]
+        img_phi_temp[img_phi_temp < 0] = 2 * np.pi + img_phi_temp[img_phi_temp < 0]
     img_phi, img_theta = np.meshgrid(img_phi_temp, img_theta_temp)
     img_phi = img_phi.flatten()
     img_theta = img_theta.flatten()
     ipix = np.compress(flg, ipix)
     pl_theta = np.compress(flg, theta_r)
     pl_phi = np.compress(flg, phi_r)
-    points = np.zeros((len(img_theta), 2), 'd')
+    points = np.zeros((len(img_theta), 2), "d")
     points[:, 0] = img_theta
     points[:, 1] = img_phi
     npix = hp.nside2npix(nside)
-    hp_map = np.zeros((data.shape[0], npix), 'd')
+    hp_map = np.zeros((data.shape[0], npix), "d")
     for i in range(data.shape[0]):
         hp_map[i, ipix] = griddata(
-            points, data[i, :], (pl_theta, pl_phi), method='nearest')
+            points, data[i, :], (pl_theta, pl_phi), method="nearest"
+        )
     return hp_map

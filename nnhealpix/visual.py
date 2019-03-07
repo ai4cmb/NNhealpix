@@ -11,31 +11,40 @@ import matplotlib
 from matplotlib.colors import LinearSegmentedColormap
 from keras import backend as K
 
-CMAP_GRAY_TO_BLACK = LinearSegmentedColormap.from_list(
-    "", ["#FEFAFA", "black"])
-CMAP_WHITE_TO_BLACK = LinearSegmentedColormap.from_list(
-    "", ["#FEFAFA", "black"])
+CMAP_GRAY_TO_BLACK = LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
+CMAP_WHITE_TO_BLACK = LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
 
 
 def val2str(val):
-    '''Convert VAL (number) into a string
+    """Convert VAL (number) into a string
 
     This function works like "str", but it substitutes any trailing
     hyphen sign with a Unicode minus sign, which is typographically
     more correct.
-    '''
+    """
     s = str(val)
-    if s[0] == '-':
+    if s[0] == "-":
         # Use the Unicode minus sign
-        s = '−' + s[1:]
+        s = "−" + s[1:]
 
     return s
 
 
-def draw_filter(fig, weights, extent, cmap, sub=None, order=1,
-                vmin=None, vmax=None, xsize=600, ysize=600,
-                show_values=False, val2str=val2str):
-    '''Return a 2D image of a filter.
+def draw_filter(
+    fig,
+    weights,
+    extent,
+    cmap,
+    sub=None,
+    order=1,
+    vmin=None,
+    vmax=None,
+    xsize=600,
+    ysize=600,
+    show_values=False,
+    val2str=val2str,
+):
+    """Return a 2D image of a filter.
 
     Parameters
     ----------
@@ -49,42 +58,44 @@ def draw_filter(fig, weights, extent, cmap, sub=None, order=1,
     ------------
     img: array
         2D image of the input filter
-    '''
+    """
 
-    order_fn = {
-        1: pixel_1st_neighbours,
-        2: pixel_2nd_neighbours,
-    }
-    assert order in order_fn.keys(), \
-        ("invalid order ({0}) passed to filter, valid values are {1}"
-         .format(order, ', '.join([str(x) for x in order_fn.keys()])))
+    order_fn = {1: pixel_1st_neighbours, 2: pixel_2nd_neighbours}
+    assert (
+        order in order_fn.keys()
+    ), "invalid order ({0}) passed to filter, valid values are {1}".format(
+        order, ", ".join([str(x) for x in order_fn.keys()])
+    )
     fn = order_fn[order]
     nside = 16
-    ipix = hp.ang2pix(nside, np.pi/2, 0)
+    ipix = hp.ang2pix(nside, np.pi / 2, 0)
     pix_num = fn(ipix, nside)
-    m = np.zeros(hp.nside2npix(nside))+np.inf
+    m = np.zeros(hp.nside2npix(nside)) + np.inf
     m[pix_num] = weights
 
     ax = pa.HpxGnomonicAxes(fig, extent, rot=[0, 2])
     fig.add_axes(ax)
 
-    ax.projmap(m, reso=1.8, vmin=vmin, vmax=vmax,
-               xsize=xsize, ysize=ysize, cmap=cmap)
+    ax.projmap(m, reso=1.8, vmin=vmin, vmax=vmax, xsize=xsize, ysize=ysize, cmap=cmap)
 
     if show_values:
         for i, curpix in enumerate(pix_num):
             theta, phi = hp.pix2ang(nside, curpix)
-            ax.projtext(theta, phi, val2str(weights[i]),
-                        horizontalalignment='center',
-                        verticalalignment='center',
-                        color='black',
-                        bbox=dict(facecolor='white', linewidth=0, alpha=0.7))
+            ax.projtext(
+                theta,
+                phi,
+                val2str(weights[i]),
+                horizontalalignment="center",
+                verticalalignment="center",
+                color="black",
+                bbox=dict(facecolor="white", linewidth=0, alpha=0.7),
+            )
 
     return ax
 
 
 def filter_plot_layout(num_of_filters):
-    '''Calculate a nice layout for a set of filters to be plotted with `plot_filters`.
+    """Calculate a nice layout for a set of filters to be plotted with `plot_filters`.
 
     This function returns a tuple containing the number of plots per
     row in each of the rows that are produced via a call to
@@ -98,7 +109,7 @@ def filter_plot_layout(num_of_filters):
 
     The result indicates that the best way to plot 7 filters in the same plot
     is to group them in two rows: 4 in the first row, and 3 in the second one.
-    '''
+    """
 
     DEFAULT_LAYOUTS = {
         1: (1,),
@@ -112,10 +123,8 @@ def filter_plot_layout(num_of_filters):
         9: (3, 3, 3),
         10: (4, 4, 2),
         11: (3, 3, 3, 2),
-
         # Starting from here, the algorithm below would produce the same
         # result. We include them here explicitly for the sake of clarity
-
         12: (4, 4, 4),
         13: (4, 3, 3, 3),
         14: (4, 4, 3, 3),
@@ -169,8 +178,7 @@ def filter_plot_axis_extents(layout, cbar_space=False):
 
         for curcol in range(cols_in_row):
             # The 0.8 factor is used to make room for the title
-            extents.append(
-                (left, top - plotheight, plotwidth, plotheight * 0.8))
+            extents.append((left, top - plotheight, plotwidth, plotheight * 0.8))
             left += plotwidth
 
         top -= plotheight
@@ -179,7 +187,7 @@ def filter_plot_axis_extents(layout, cbar_space=False):
 
 
 def filter_plot_size(layout, basesize):
-    '''Return the size (in inches) of the plot produced by `plot_filters`
+    """Return the size (in inches) of the plot produced by `plot_filters`
 
     Parameters
     ----------
@@ -191,7 +199,7 @@ def filter_plot_size(layout, basesize):
     Returns
     -------
     A 2-element tuple containing the width and height in inches of the plot.
-    '''
+    """
 
     nrows, ncols = len(layout), max(layout)
 
@@ -204,10 +212,19 @@ def filter_plot_size(layout, basesize):
     return (width, height)
 
 
-def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
-                 show_titles=False, titlefn=None,
-                 show_values=False, val2str=val2str, basesize=3):
-    '''plot a set of filters.
+def plot_filters(
+    filters,
+    cmap=None,
+    cbar=False,
+    vmin=None,
+    vmax=None,
+    show_titles=False,
+    titlefn=None,
+    show_values=False,
+    val2str=val2str,
+    basesize=3,
+):
+    """plot a set of filters.
 
     Parameters
     ----------
@@ -238,12 +255,12 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
     Returns
     ------------
     fig: figure
-    '''
+    """
 
     if not cmap:
         cmap = CMAP_GRAY_TO_BLACK
-        cmap.set_bad('white', alpha=0)
-        cmap.set_under('white', alpha=0)
+        cmap.set_bad("white", alpha=0)
+        cmap.set_under("white", alpha=0)
 
     nfilt = len(filters)
     filt_min, filt_max = vmin, vmax
@@ -258,15 +275,22 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
     extents = filter_plot_axis_extents(layout, cbar_space=cbar is not None)
 
     for j in range(len(extents)):
-        ax = draw_filter(fig, filters[j], extents[j], cmap=cmap,
-                         vmin=filt_min, vmax=filt_max,
-                         show_values=show_values, val2str=val2str)
+        ax = draw_filter(
+            fig,
+            filters[j],
+            extents[j],
+            cmap=cmap,
+            vmin=filt_min,
+            vmax=filt_max,
+            show_values=show_values,
+            val2str=val2str,
+        )
 
         if show_titles:
             if titlefn:
                 title = titlefn(j)
             else:
-                title = 'Filter #{0}'.format(j)
+                title = "Filter #{0}".format(j)
 
             ax.set_title(title)
 
@@ -274,8 +298,7 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
 
     if cbar:
         cbar_ax = fig.add_axes([0.9, 0.15, 0.05, 0.7])
-        sm = plt.cm.ScalarMappable(
-            cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
         sm._A = []
         fig.colorbar(sm, cax=cbar_ax)
 
@@ -283,7 +306,7 @@ def plot_filters(filters, cmap=None, cbar=False, vmin=None, vmax=None,
 
 
 def map_img(map_in, order=1):
-    '''Return a 2D image of a filter.
+    """Return a 2D image of a filter.
 
     Parameters
     ----------
@@ -294,7 +317,7 @@ def map_img(map_in, order=1):
     ------------
     map_img: array
         2D image of the input filter
-    '''
+    """
 
     img = hp.mollview(map_in, notext=True, return_projected_map=True)
     plt.close()
@@ -303,7 +326,7 @@ def map_img(map_in, order=1):
 
 
 def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None):
-    '''plot a the effect of filters on maps in a given layer of the network.
+    """plot a the effect of filters on maps in a given layer of the network.
 
     Parameters
     ----------
@@ -324,12 +347,12 @@ def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None):
     Returns
     ------------
     fig: figure
-    '''
+    """
 
     if not cmap:
         cmap = CMAP_GRAY_TO_BLACK
-        cmap.set_bad('white', alpha=0)
-        cmap.set_under('white', alpha=0)
+        cmap.set_bad("white", alpha=0)
+        cmap.set_under("white", alpha=0)
     if len(maps.shape) == 1:
         maps = maps.reshape(1, len(maps))
     nmaps = len(maps)
@@ -354,27 +377,35 @@ def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None):
             m[np.where(m < maps_min)] = maps_min
             m[np.where((m > maps_max) & np.isfinite(m))] = maps_max
         except:
-            m = map_img(maps[0])*0+np.inf
+            m = map_img(maps[0]) * 0 + np.inf
         im = ax.imshow(m, vmin=maps_min, vmax=maps_max)
         ax.set_axis_off()
         im.set_cmap(cmap)
         if j < nmaps:
             if np.all(maps[j] == 0):
                 totactive -= 1
-                line = np.arange(600)+100
-                ax.plot(line, line/2, color='black', lw=0.5, alpha=0.5)
+                line = np.arange(600) + 100
+                ax.plot(line, line / 2, color="black", lw=0.5, alpha=0.5)
     fig.subplots_adjust(right=0.8)
     if cbar:
         cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
         fig.colorbar(im, cax=cbar_ax)
-    print('Active nodes: ', totactive)
+    print("Active nodes: ", totactive)
     return fig
 
 
-def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None,
-                     show_titles=False, titlefn=None,
-                     figsize=None, plot=True):
-    '''return a map of the active nodes in a give layer and plot it
+def plot_layer_nodes(
+    model,
+    layer,
+    X_val,
+    binary=False,
+    cmap=None,
+    show_titles=False,
+    titlefn=None,
+    figsize=None,
+    plot=True,
+):
+    """return a map of the active nodes in a give layer and plot it
 
     Parameters
     ----------
@@ -408,15 +439,14 @@ def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None,
     nodes: array-like
         matrix with the map of active nodes in the layer.
     fig: figure
-    '''
+    """
 
     if not cmap:
         cmap = CMAP_WHITE_TO_BLACK
         # cmap = matplotlib.colorbar.cm.magma_r
-        cmap.set_bad('white', alpha=0)
-        cmap.set_under('white', alpha=0)
-    get_layer_output = K.function([model.layers[0].input],
-                                  [model.layers[layer].output])
+        cmap.set_bad("white", alpha=0)
+        cmap.set_under("white", alpha=0)
+    get_layer_output = K.function([model.layers[0].input], [model.layers[layer].output])
     layer_output = get_layer_output([X_val])[0]
     nfilt = np.shape(layer_output)[2]
     nval = np.shape(layer_output)[0]
@@ -431,20 +461,20 @@ def plot_layer_nodes(model, layer, X_val, binary=False, cmap=None,
         intfigsize = figsize
     else:
         if nval > 20 and nfilt > 30:
-            intfigsize = (nfilt//30, nval//20)
+            intfigsize = (nfilt // 30, nval // 20)
         elif nval < 20 and nfilt > 30:
-            intfigsize = (nfilt//30, 1)
+            intfigsize = (nfilt // 30, 1)
         else:
             intfigsize = (1, 1)
 
     fig = plt.figure(figsize=intfigsize)
-    plt.imshow(nodes, cmap=cmap, vmin=0, aspect='auto')
+    plt.imshow(nodes, cmap=cmap, vmin=0, aspect="auto")
 
     if show_titles:
         if titlefn:
             titles = [titlefn(i) for i in range(nfilt)]
         else:
-            titles = ['#{0}'.format(i) for i in range(nfilt)]
+            titles = ["#{0}".format(i) for i in range(nfilt)]
 
         plt.xticks(range(nfilt), titles)
 

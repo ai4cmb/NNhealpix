@@ -14,8 +14,8 @@ class OrderMap(Layer):
     """
 
     def __init__(self, indices, **kwargs):
-        self.input_indices = np.array(indices, dtype='int32')
-        Kindices = K.variable(indices, dtype='int32')
+        self.input_indices = np.array(indices, dtype="int32")
+        Kindices = K.variable(indices, dtype="int32")
         self.indices = Kindices
         super(OrderMap, self).__init__(**kwargs)
 
@@ -25,19 +25,18 @@ class OrderMap(Layer):
 
     def call(self, x):
         x = tf.to_float(x)
-        zero = tf.fill([tf.shape(x)[0], 1, tf.shape(x)[2]], 0.)
+        zero = tf.fill([tf.shape(x)[0], 1, tf.shape(x)[2]], 0.0)
         x1 = tf.concat([x, zero], axis=1)
         reordered = tf.gather(x1, self.indices, axis=1)
         self.output_dim = reordered.shape
         return reordered
 
     def compute_output_shape(self, input_shape):
-        return (
-            input_shape[0], int(self.output_dim[1]), int(self.output_dim[2]))
+        return (input_shape[0], int(self.output_dim[1]), int(self.output_dim[2]))
 
     def get_config(self):
         config = super(OrderMap, self).get_config()
-        config.update({'indices': self.input_indices})
+        config.update({"indices": self.input_indices})
         return config
 
 
@@ -56,7 +55,8 @@ def Dgrade(nside_in, nside_out):
 
     file_in = os.path.join(
         os.path.dirname(__file__),
-        '../ancillary_files/dgrade_from{}_to{}'.format(nside_in, nside_out))
+        "../ancillary_files/dgrade_from{}_to{}".format(nside_in, nside_out),
+    )
     try:
         pixel_indices = np.load(file_in)
     except:
@@ -64,9 +64,10 @@ def Dgrade(nside_in, nside_out):
 
     def f(x):
         y = OrderMap(pixel_indices)(x)
-        pool_size = int((nside_in/nside_out)**2.)
+        pool_size = int((nside_in / nside_out) ** 2.0)
         y = keras.layers.AveragePooling1D(pool_size=pool_size)(y)
         return y
+
     return f
 
 
@@ -85,7 +86,8 @@ def MaxPooling(nside_in, nside_out):
 
     file_in = os.path.join(
         os.path.dirname(__file__),
-        '../ancillary_files/dgrade_from{}_to{}'.format(nside_in, nside_out))
+        "../ancillary_files/dgrade_from{}_to{}".format(nside_in, nside_out),
+    )
     try:
         pixel_indices = np.load(file_in)
     except:
@@ -93,9 +95,10 @@ def MaxPooling(nside_in, nside_out):
 
     def f(x):
         y = OrderMap(pixel_indices)(x)
-        pool_size = int((nside_in/nside_out)**2.)
+        pool_size = int((nside_in / nside_out) ** 2.0)
         y = keras.layers.MaxPooling1D(pool_size=pool_size)(y)
         return y
+
     return f
 
 
@@ -120,7 +123,8 @@ def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
 
     file_in = os.path.join(
         os.path.dirname(__file__),
-        '../ancillary_files/dgrade_from{}_to{}'.format(nside_in, nside_out))
+        "../ancillary_files/dgrade_from{}_to{}".format(nside_in, nside_out),
+    )
     try:
         pixel_indices = np.load(file_in)
     except:
@@ -128,11 +132,17 @@ def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
 
     def f(x):
         y = OrderMap(pixel_indices)(x)
-        kernel_size = int((nside_in/nside_out)**2.)
+        kernel_size = int((nside_in / nside_out) ** 2.0)
         y = keras.layers.Conv1D(
-            filters, kernel_size=kernel_size, strides=kernel_size,
-            use_bias=use_bias, trainable=trainable, kernel_initializer='random_uniform')(y)
+            filters,
+            kernel_size=kernel_size,
+            strides=kernel_size,
+            use_bias=use_bias,
+            trainable=trainable,
+            kernel_initializer="random_uniform",
+        )(y)
         return y
+
     return f
 
 
@@ -157,7 +167,7 @@ def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
     """
 
     if kernel_size != 9:
-        raise ValueError('kernel size must be 9')
+        raise ValueError("kernel size must be 9")
     file_in = nnhealpix.filter_file_name(nside, kernel_size)
     try:
         pixel_indices = np.load(file_in)
@@ -167,10 +177,16 @@ def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
     def f(x):
         y = OrderMap(pixel_indices)(x)
         y = keras.layers.Conv1D(
-            filters, kernel_size=kernel_size, strides=kernel_size,
-            use_bias=use_bias, trainable=trainable)(y)
+            filters,
+            kernel_size=kernel_size,
+            strides=kernel_size,
+            use_bias=use_bias,
+            trainable=trainable,
+        )(y)
         return y
+
     return f
+
 
 # def ResConvNeighbours(
 #     nside, kernel_size, filters, use_bias=False, trainable=True, BatchNorm=False):
