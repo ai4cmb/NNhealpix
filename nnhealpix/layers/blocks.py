@@ -9,7 +9,7 @@ import nnhealpix.map_ordering
 
 
 class OrderMap(Layer):
-    """ defines the keras layer that reorders the inputs map to then perfrom
+    """Defines the keras layer that reorders the inputs map to then perform
     convolution on them
     """
 
