@@ -26,7 +26,7 @@ git clone git@github.com:ai4cmb/NNhealpix.git
 flit install --symlink [--python path/to/python]
 ```
 
-If you do not want to use Filt, you can install the library using the
+If you do not want to use Flit, you can install the library using the
 following command:
 
 ```
