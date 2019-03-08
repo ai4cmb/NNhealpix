@@ -1,0 +1,21 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+module = "nnhealpix"
+author = "Nicoletta Krachmalnicoff, Maurizio Tomasi"
+author-email = "nkrach@sissa.it"
+home-page = "https://github.com/ai4cmb/NNhealpix"
+classifiers = ["License :: OSI Approved :: MIT License"]
+description-file = "DESCRIPTION.md"
+requires = [
+    "healpy >= 1.12",
+    "keras >= 2.2",
+    "matplotlib >= 2.0",
+    "numba >= 0.39",
+    "numpy >= 1.15",
+    "scipy >= 1.1",
+    "tensorflow >= 1.10",
+]
+requires-python = ">= 3.4"

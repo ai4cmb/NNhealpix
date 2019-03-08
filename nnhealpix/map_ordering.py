@@ -6,12 +6,7 @@ import os.path
 import numba
 
 DATADIR = os.path.expanduser(
-    os.path.join(
-        '~',
-        '.config',
-        'nnhealpix',
-        'ancillary_files',
-    )
+    os.path.join("~", ".config", "nnhealpix", "ancillary_files")
 )
 
 """ Functions to create and save the arrays defining the map ordering to
@@ -20,17 +15,11 @@ perfrom convolution.
 
 
 def dgrade_file_name(nside_in, nside_out):
-    return os.path.join(
-        DATADIR,
-        'dgrade_from{}_to{}.npz'.format(nside_in, nside_out),
-    )
+    return os.path.join(DATADIR, "dgrade_from{}_to{}.npz".format(nside_in, nside_out))
 
 
 def filter_file_name(nside, order):
-    return os.path.join(
-        DATADIR,
-        'filter_nside{0}_order{1}.npz'.format(nside, order),
-    )
+    return os.path.join(DATADIR, "filter_nside{0}_order{1}.npz".format(nside, order))
 
 
 def make_indices(x, y, xmin, xmax, ymin, ymax):
@@ -63,11 +52,13 @@ def dgrade(nside_in, nside_out):
         nside_out while performing convolution
     """
 
-    assert hp.isnsideok(nside_in, nest=True), \
-        'invalid input nside {0} in call to dgrade'.format(nside_in)
+    assert hp.isnsideok(
+        nside_in, nest=True
+    ), "invalid input nside {0} in call to dgrade".format(nside_in)
 
-    assert hp.isnsideok(nside_out, nest=True), \
-        'invalid output nside {0} in call to dgrade'.format(nside_out)
+    assert hp.isnsideok(
+        nside_out, nest=True
+    ), "invalid output nside {0} in call to dgrade".format(nside_out)
 
     assert nside_out < nside_in
 
@@ -80,19 +71,22 @@ def dgrade(nside_in, nside_out):
         result = np.empty(pixels * stride)
         x, y, f = hp.pix2xyf(nside_out, np.arange(pixels))
 
-        i = np.empty(stride, dtype='int')
-        j = np.empty(stride, dtype='int')
-        f_spread = np.empty(stride, dtype='int')
+        i = np.empty(stride, dtype="int")
+        j = np.empty(stride, dtype="int")
+        f_spread = np.empty(stride, dtype="int")
         for pixnum in range(pixels):
             make_indices(
                 i,
                 j,
-                fact * x[pixnum], fact * (x[pixnum] + 1),
-                fact * y[pixnum], fact * (y[pixnum] + 1),
+                fact * x[pixnum],
+                fact * (x[pixnum] + 1),
+                fact * y[pixnum],
+                fact * (y[pixnum] + 1),
             )
             f_spread[:] = f[pixnum]
-            result[(pixnum*stride):((pixnum + 1)*stride)] = \
-                hp.xyf2pix(nside_in, i, j, f_spread)
+            result[(pixnum * stride) : ((pixnum + 1) * stride)] = hp.xyf2pix(
+                nside_in, i, j, f_spread
+            )
 
         file_name = dgrade_file_name(nside_in, nside_out)
         write_ancillary_file(file_name, result)
@@ -121,10 +115,11 @@ def pixel_1st_neighbours(ipix, nside):
     If a neighbour does not exist (it can be the case for W, N, E and S) the
     corresponding pixel number will be -1
     """
-    assert hp.isnsideok(nside, nest=True), \
-        'invalid nside {0} in call to pixel_1st_neighbours'.format(nside)
+    assert hp.isnsideok(
+        nside, nest=True
+    ), "invalid nside {0} in call to pixel_1st_neighbours".format(nside)
 
-    pix_array = np.empty(9, dtype='int')
+    pix_array = np.empty(9, dtype="int")
     pix_array[0] = ipix
     pix_array[1:9] = hp.pixelfunc.get_all_neighbours(nside, ipix)
     return pix_array
@@ -160,7 +155,7 @@ def pixel_2nd_neighbours(ipix, nside):
         for sidepix in hp.pixelfunc.get_all_neighbours(nside, centerpix):
             pixels.add(sidepix)
 
-    result = np.empty(len(pixels), dtype='int')
+    result = np.empty(len(pixels), dtype="int")
     for i, item in enumerate(sorted(pixels)):
         result[i] = item
 
@@ -169,7 +164,7 @@ def pixel_2nd_neighbours(ipix, nside):
 
 def neighbours25(nside, ipix):
     nfn = hp.pixelfunc.get_all_neighbours
-    result = np.empty(25, dtype='int')
+    result = np.empty(25, dtype="int")
 
     # Center of the 5×5 tile
     result[0] = ipix
@@ -227,17 +222,18 @@ def filter(nside, order=1):
     """
 
     assert hp.isnsideok(
-        nside, nest=True), 'invalid nside ({0}) in call to filter'.format(nside)
+        nside, nest=True
+    ), "invalid nside ({0}) in call to filter".format(nside)
 
-    order_fn = {
-        1: pixel_1st_neighbours,
-        2: pixel_2nd_neighbours,
-    }
+    order_fn = {1: pixel_1st_neighbours, 2: pixel_2nd_neighbours}
 
-    assert order in order_fn.keys(), ("invalid order ({0}) passed to filter, valid values are {1}"
-                                      .format(order, ', '.join([str(x) for x in order_fn.keys()])))
+    assert (
+        order in order_fn.keys()
+    ), "invalid order ({0}) passed to filter, valid values are {1}".format(
+        order, ", ".join([str(x) for x in order_fn.keys()])
+    )
 
-    result = np.empty(0, dtype='int')
+    result = np.empty(0, dtype="int")
     fn = order_fn[order]
     for i in range(hp.nside2npix(nside)):
         result = np.concatenate((result, fn(i, nside)))
@@ -277,7 +273,7 @@ def read_filter(nside, order):
     file_name = filter_file_name(nside, order)
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with np.load(file_name) as f:
-        return f['arr']
+        return f["arr"]
 
 
 def read_dgrade(nside_in, nside_out):
@@ -294,4 +290,4 @@ def read_dgrade(nside_in, nside_out):
     file_name = dgrade_file_name(nside_in, nside_out)
     os.makedirs(os.path.dirname(file_name), exist_ok=True)
     with np.load(file_name) as f:
-        return f['arr']
+        return f["arr"]
