@@ -1,6 +1,6 @@
 # NNhealpix
 
-[https://nnhealpix.readthedocs.io/en/latest/](https://nnhealpix.readthedocs.io/en/latest/?badge=latest)
+[https://nnhealpix.readthedocs.io/en/latest/?badge=latest](https://nnhealpix.readthedocs.io/en/latest/)
 
 This is a package to apply neural networks and convolutional neural
 networks to spherical signal projected on the healpix grid.
