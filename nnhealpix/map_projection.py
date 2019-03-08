@@ -279,7 +279,7 @@ def img2healpix_planar(img, nside, thetac, phic, delta_theta, delta_phi, rot=Non
 
     imgf = np.flip(img, axis=2)
     imgf = np.array(imgf)
-    print(img.shape[1], img.shape[2])
+
     data = imgf.reshape(img.shape[0], img.shape[1] * img.shape[2])
     xsize = img.shape[1]
     ysize = img.shape[2]

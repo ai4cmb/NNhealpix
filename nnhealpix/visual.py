@@ -325,7 +325,7 @@ def map_img(map_in, order=1):
     return img
 
 
-def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None):
+def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None, verbose=True):
     """plot a the effect of filters on maps in a given layer of the network.
 
     Parameters
@@ -343,6 +343,8 @@ def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None):
     count: boolean
         whether to return or not the number of active nodes in the layer,
         default is True
+    verbose: boolean
+        if True, print a summary of the active nodes
 
     Returns
     ------------
@@ -390,7 +392,10 @@ def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None):
     if cbar:
         cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
         fig.colorbar(im, cax=cbar_ax)
-    print("Active nodes: ", totactive)
+
+    if verbose:
+        print("Active nodes: ", totactive)
+
     return fig
 
 
