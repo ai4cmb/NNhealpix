@@ -2,6 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/nnhealpix/badge/?version=latest)](https://nnhealpix.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.com/ai4cmb/NNhealpix.svg?branch=master)](https://travis-ci.com/ai4cmb/NNhealpix)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This is a package to apply neural networks and convolutional neural
 networks to spherical signal projected on the healpix grid.
