@@ -10,7 +10,7 @@ Welcome to HealpixNN's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   tutorial
 
 Indices and tables
 ==================
