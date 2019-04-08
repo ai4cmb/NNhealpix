@@ -6,11 +6,26 @@
 Welcome to HealpixNN's documentation!
 =====================================
 
+NNHealpix is a Python package for the Keras library that implements
+convolution and pooling layers defined on a HEALPix sphere. This
+library can be used to define convolutional neural networks that
+operate on the sphere; so far it has mainly been used for analysis of
+the full/partial celestial sky.
+
+Here is a list of the current features/limitations of the library:
+
+* Convolution over 7/8 neighbours of a pixel, using :func:`ConvNeighbours`;
+* Pooling over pixel neighbours, using :func:`Pooling`,
+  :func:`AveragePooling`, and :func:`MaxPooling`;
+* NNHealpix implements layers that are *not* rotationally equivariant;
+  this can usually be overcomed using data augmentation.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    tutorial
+   layers
 
 Indices and tables
 ==================
