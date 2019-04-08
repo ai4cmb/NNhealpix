@@ -71,8 +71,8 @@ def Dgrade(nside_in, nside_out):
     return f
 
 
-def MaxPooling(nside_in, nside_out):
-    """ keras layer performing a downgrade+maxpooling of input maps
+def Pooling(nside_in, nside_out, layer1D, *args, **kwargs):
+    """keras layer performing a downgrade+custom pooling of input maps
 
     Parameters
     ----------
@@ -82,6 +82,10 @@ def MaxPooling(nside_in, nside_out):
     nside_out: integer
         Nside parameter for the output maps.
         Must be a valid healpix Nside value
+    layer1D: layer object
+    args: positional arguments to be passed to ``layer1D``
+    kwargs: keyword arguments to be passed to ``layer1D``. The keyword
+            ``pool_size`` is handled by ``Pooling``.
     """
 
     file_in = os.path.join(
@@ -96,10 +100,43 @@ def MaxPooling(nside_in, nside_out):
     def f(x):
         y = OrderMap(pixel_indices)(x)
         pool_size = int((nside_in / nside_out) ** 2.0)
-        y = keras.layers.MaxPooling1D(pool_size=pool_size)(y)
+        kwargs["pool_size"] = pool_size
+        y = layer1D(*args, **kwargs)(y)
         return y
 
     return f
+
+
+def MaxPooling(nside_in, nside_out):
+    """ keras layer performing a downgrade+maxpooling of input maps
+
+    Parameters
+    ----------
+    nside_in : integer
+        Nside parameter for the input maps.
+        Must be a valid healpix Nside value
+    nside_out: integer
+        Nside parameter for the output maps.
+        Must be a valid healpix Nside value
+    """
+
+    return Pooling(nside_in, nside_out, keras.layers.MaxPooling1D)
+
+
+def AveragePooling(nside_in, nside_out):
+    """ keras layer performing a downgrade+average of input maps
+
+    Parameters
+    ----------
+    nside_in : integer
+        Nside parameter for the input maps.
+        Must be a valid healpix Nside value
+    nside_out: integer
+        Nside parameter for the output maps.
+        Must be a valid healpix Nside value
+    """
+
+    return Pooling(nside_in, nside_out, keras.layers.AveragePooling1D)
 
 
 def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
