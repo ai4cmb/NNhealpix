@@ -14,9 +14,12 @@ the full/partial celestial sky.
 
 Here is a list of the current features/limitations of the library:
 
-* Convolution over 7/8 neighbours of a pixel, using :func:`ConvNeighbours`;
-* Pooling over pixel neighbours, using :func:`Pooling`,
-  :func:`AveragePooling`, and :func:`MaxPooling`;
+* Convolution over 7/8 neighbours of a pixel, using
+  :func:`nnhealpix.layers.ConvNeighbours`;
+* Pooling over pixel neighbours, using
+  :func:`nnhealpix.layers.Pooling`,
+  :func:`nnhealpix.layers.AveragePooling`, and
+  :func:`nnhealpix.layers.MaxPooling`;
 * NNHealpix implements layers that are *not* rotationally equivariant;
   this can usually be overcomed using data augmentation.
 
@@ -26,6 +29,7 @@ Here is a list of the current features/limitations of the library:
 
    tutorial
    layers
+   nnhealpix
 
 Indices and tables
 ==================

@@ -1,10 +1,20 @@
 Tutorial
 ========
 
+Welcome to NNHealpix documentation! In this tutorial, we show how to
+use the library to perform a classification exercise. We are going to
+project handwritten digits on a sphere, and we will build a simple
+Convolutional Neural Network (CNN) to recognize digits. We will use
+Keras and the MNIST dataset.
+
 Build training and validation sets
 ----------------------------------
 
-First we load the MNIST dataset
+We are going to use the MNIST database to build our training and
+validation sets. MINST is a set of 28×28 grayscale images representing
+handwritten digits, and it is a widely-used database for
+classification problems in Machine Learning. The MNIST dataset is
+available in Keras, so we simply load it:
 
 .. code:: ipython3
 
@@ -15,8 +25,9 @@ First we load the MNIST dataset
 
     (X_train_2d, y_train), (X_val_2d, y_val) = mnist.load_data()
 
-we remove the number 9 from the dataset, as 6 and 9 cannot be
-distinguish once projected on the sphere.
+As we are going to randomly rotate the digits while projecting them on
+the sphere, it would be difficult to distinguish 6 from 9. Therefore,
+we are discarding the digit 9 from the test set:
 
 .. code:: ipython3
 
@@ -25,37 +36,38 @@ distinguish once projected on the sphere.
     ok_train = np.where(y_train!=9)
     X_train_2d = X_train_2d[ok_train]
     y_train = y_train[ok_train]
+    
     ok_val = np.where(y_val!=9)
     X_val_2d = X_val_2d[ok_val]
     y_val = y_val[ok_val]
 
-We generate training and validation set by projecting MNIST 2D images
-on the Healpix sphere (with Nside=16) in a random position, with
-random rotation and dimension.
+The MNIST images are supposed to be flat 28×28 bitmaps, but we need
+them projected on a HEALPix sphere. As this is a common task,
+NNHealpix provides the function :func:`nnhealpix.visual.projectimages` for
+this purpose. We use ``NSIDE=16``, and we apply a random rotation to
+each of them. The angular size of each image is random as well.
 
 .. code:: ipython3
 
     import healpy as hp
-    
-    Ntrain = 10000
-    Nval = 1000
-    Nside = 16
-    X_train_hp = np.zeros((Ntrain, hp.nside2npix(Nside)))
-    X_val_hp = np.zeros((Nval, hp.nside2npix(Nside)))
-    y_train_hp = np.zeros(Ntrain)
-    y_val_hp = np.zeros(Nval)
-
-.. code:: ipython3
-
     from keras.utils import np_utils
     import nnhealpix as nnhp
-    
+        
+    NTRAIN, NVAL = 10000, 1000
+    NSIDE = 16
+    NPIX = hp.nside2npix(NSIDE)
+    X_train_hp = np.zeros((NTRAIN, NPIX))
+    X_val_hp = np.zeros((NVAL, NPIX))
+    y_train_hp = np.zeros(NTRAIN)
+    y_val_hp = np.zeros(NVAL)
+
+    # Range of sizes for theta and phi
     dim_theta = [120., 180.]
     dim_phi = [120. , 360.]
-    for i, (id_img, hp_img) in enumerate(nnhp.projectimages(X_train_2d, Nside, dim_theta, dim_phi, num=Ntrain)):
+    for i, (id_img, hp_img) in enumerate(nnhp.projectimages(X_train_2d, NSIDE, dim_theta, dim_phi, num=NTRAIN)):
         X_train_hp[i, :] = hp_img
         y_train_hp[i] = y_train[id_img]
-    for i, (id_img, hp_img) in enumerate(nnhp.projectimages(X_val_2d, Nside, dim_theta, dim_phi, num=Nval)):
+    for i, (id_img, hp_img) in enumerate(nnhp.projectimages(X_val_2d, NSIDE, dim_theta, dim_phi, num=NVAL)):
         X_val_hp[i, :] = hp_img
         y_val_hp[i] = y_val[id_img]
     y_train = np_utils.to_categorical(y_train_hp)
@@ -69,11 +81,11 @@ Plot projected map
     import matplotlib.pylab as plt
     %matplotlib inline
     
-    Nt = np.random.randint(Ntrain)
+    NINDEX = np.random.randint(NTRAIN)
     fig = plt.figure(figsize=(14,4))
-    hp.mollview(X_train_hp[Nt], sub=131, max=255, title='Mollview projection')
-    hp.orthview(X_train_hp[Nt], sub=132, max=255, title='Orthographic projection')
-    hp.orthview(X_train_hp[Nt], rot=[0, 90], sub=133, max=255, title='Orthographic projection (poles)')
+    hp.mollview(X_train_hp[NINDEX], sub=131, max=255, title='Mollview projection')
+    hp.orthview(X_train_hp[NINDEX], sub=132, max=255, title='Orthographic projection')
+    hp.orthview(X_train_hp[NINDEX], rot=[0, 90], sub=133, max=255, title='Orthographic projection (poles)')
 
 
 
@@ -98,21 +110,21 @@ Build neural network and train
 .. code:: ipython3
 
     import keras.layers
-    import nnhealpix.layers.blocks
+    import nnhealpix.layers
     
     inputs = keras.layers.Input(shape)
-    x = nnhealpix.layers.blocks.ConvNeighbours(Nside, filters=32, kernel_size=9)(inputs)
+    x = nnhealpix.layers.ConvNeighbours(NSIDE, filters=32, kernel_size=9)(inputs)
     x = keras.layers.Activation('relu')(x)
-    x = nnhealpix.layers.blocks.MaxPooling(Nside, Nside//2)(x)
-    x = nnhealpix.layers.blocks.ConvNeighbours(Nside//2, filters=32, kernel_size=9)(x)
+    x = nnhealpix.layers.MaxPooling(NSIDE, NSIDE//2)(x)
+    x = nnhealpix.layers.ConvNeighbours(NSIDE//2, filters=32, kernel_size=9)(x)
     x = keras.layers.Activation('relu')(x)
-    x = nnhealpix.layers.blocks.MaxPooling(Nside//2, Nside//4)(x)
-    x = nnhealpix.layers.blocks.ConvNeighbours(Nside//4, filters=32, kernel_size=9)(x)
+    x = nnhealpix.layers.MaxPooling(NSIDE//2, NSIDE//4)(x)
+    x = nnhealpix.layers.ConvNeighbours(NSIDE//4, filters=32, kernel_size=9)(x)
     x = keras.layers.Activation('relu')(x)
-    x = nnhealpix.layers.blocks.MaxPooling(Nside//4, Nside//8)(x)
-    x = nnhealpix.layers.blocks.ConvNeighbours(Nside//8, filters=32, kernel_size=9)(x)
+    x = nnhealpix.layers.MaxPooling(NSIDE//4, NSIDE//8)(x)
+    x = nnhealpix.layers.ConvNeighbours(NSIDE//8, filters=32, kernel_size=9)(x)
     x = keras.layers.Activation('relu')(x)
-    x = nnhealpix.layers.blocks.MaxPooling(Nside//8, Nside//16)(x)
+    x = nnhealpix.layers.MaxPooling(NSIDE//8, NSIDE//16)(x)
     x = keras.layers.Dropout(0.2)(x)
     x = keras.layers.Flatten()(x)
     x = keras.layers.Dense(48)(x)
@@ -163,7 +175,7 @@ Check results
 .. code:: ipython3
 
     hy = read_history('history_MNIST_tutorial.npy')
-    model = load_model('model_MNIST_tutorial.h5', custom_objects={'OrderMap': nnhealpix.layers.blocks.OrderMap})
+    model = load_model('model_MNIST_tutorial.h5', custom_objects={'OrderMap': nnhealpix.layers.OrderMap})
 
 .. code:: ipython3
 
@@ -171,16 +183,18 @@ Check results
     ok_test = np.where(y_test!=9)
     X_test_2d = X_test_2d[ok_test]
     y_test = y_test[ok_test]
-    Ntest = 1000
-    Nside = 16
-    X_test_hp = np.zeros((Ntest, hp.nside2npix(Nside)))
-    y_test_hp = np.zeros(Ntest)
+    
+    NTEST = 1000
+    NSIDE = 16
+    NPIX = hp.nside2npix(NSIDE)
+    X_test_hp = np.zeros((NTEST, NPIX))
+    y_test_hp = np.zeros(NTEST)
 
 .. code:: ipython3
 
     dim_theta = [120., 180.]
     dim_phi = [120. , 360.]
-    for i, (id_img, hp_img) in enumerate(nnhp.projectimages(X_test_2d, Nside, dim_theta, dim_phi, num=Ntest)):
+    for i, (id_img, hp_img) in enumerate(nnhp.projectimages(X_test_2d, NSIDE, dim_theta, dim_phi, num=NTEST)):
         X_test_hp[i, :] = hp_img
         y_test_hp[i] = y_test[id_img]
     y_test = np_utils.to_categorical(y_test_hp)
@@ -223,8 +237,8 @@ this is the network trained and tested in Krachmalnicoff & Tomasi 2019
 
 .. code:: ipython3
 
-    modelPT = load_model('model_MNIST_16x32_8x32_4x32_2x32_Ntrain100000_HVDn10_rndxrnd.h5', 
-                              custom_objects={'OrderMap': nnhealpix.layers.blocks.OrderMap})
+    modelPT = load_model('model_MNIST_16x32_8x32_4x32_2x32_NTRAIN100000_HVDn10_rndxrnd.h5', 
+                              custom_objects={'OrderMap': nnhealpix.layers.OrderMap})
     modelPT.summary()
 
 
@@ -238,7 +252,7 @@ this is the network trained and tested in Krachmalnicoff & Tomasi 2019
 
 .. code:: ipython3
 
-    hyPT = read_history('history_MNIST_16x32_8x32_4x32_2x32_Ntrain100000_HVDn10_rndxrnd.npy')
+    hyPT = read_history('history_MNIST_16x32_8x32_4x32_2x32_NTRAIN100000_HVDn10_rndxrnd.npy')
 
 .. code:: ipython3
 
@@ -291,11 +305,11 @@ the above filters of it, therefore the output of layer number 3.
 
 .. code:: ipython3
 
-    Nt = np.random.randint(Ntest)
+    NINDEX = np.random.randint(NTEST)
     fig = plt.figure(figsize=(14,4))
-    hp.mollview(X_test_hp[Nt], sub=131, max=255, title='Mollview projection')
-    hp.orthview(X_test_hp[Nt], sub=132, max=255, title='Orthographic projection')
-    hp.orthview(X_test_hp[Nt], rot=[0, 90], sub=133, max=255,
+    hp.mollview(X_test_hp[NINDEX], sub=131, max=255, title='Mollview projection')
+    hp.orthview(X_test_hp[NINDEX], sub=132, max=255, title='Orthographic projection')
+    hp.orthview(X_test_hp[NINDEX], rot=[0, 90], sub=133, max=255,
                 title='Orthographic projection (poles)')
 
 .. image:: images/output_37_0.png
@@ -305,7 +319,7 @@ the above filters of it, therefore the output of layer number 3.
 
     get_layer_output = K.function([modelPT.layers[0].input],
                                       [modelPT.layers[3].output])
-    layer_output = get_layer_output([X_test[Nt:Nt+1]])[0]
+    layer_output = get_layer_output([X_test[NINDEX:NINDEX+1]])[0]
     filt_maps = layer_output[0].T
 
 .. code:: ipython3
