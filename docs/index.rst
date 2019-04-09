@@ -30,6 +30,7 @@ Here is a list of the current features/limitations of the library:
    tutorial
    layers
    nnhealpix
+   visualization
 
 Indices and tables
 ==================

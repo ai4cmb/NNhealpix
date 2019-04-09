@@ -7,7 +7,7 @@ from keras.layers import Conv1D
 import keras.backend as K
 from keras.engine.topology import Layer
 import tensorflow as tf
-import nnhealpix.map_ordering
+import nnhealpix as nnh
 
 
 class OrderMap(Layer):
@@ -51,7 +51,7 @@ class OrderMap(Layer):
 
 
 def Dgrade(nside_in, nside_out):
-    """ keras layer performing a downgrade of input maps
+    """Keras layer performing a downgrade of input maps
 
     Parameters
     ----------
@@ -70,7 +70,7 @@ def Dgrade(nside_in, nside_out):
     try:
         pixel_indices = np.load(file_in)
     except:
-        pixel_indices = nnhealpix.map_ordering.dgrade(nside_in, nside_out)
+        pixel_indices = nnh.dgrade(nside_in, nside_out)
 
     def f(x):
         y = OrderMap(pixel_indices)(x)
@@ -82,20 +82,17 @@ def Dgrade(nside_in, nside_out):
 
 
 def Pooling(nside_in, nside_out, layer1D, *args, **kwargs):
-    """keras layer performing a downgrade+custom pooling of input maps
+    """Keras layer performing a downgrade+custom pooling of input maps
 
-    Parameters
-    ----------
-    nside_in : integer
-        Nside parameter for the input maps.
-        Must be a valid healpix Nside value
-    nside_out: integer
-        Nside parameter for the output maps.
-        Must be a valid healpix Nside value
-    layer1D: layer object
-    args: positional arguments to be passed to :code:`layer1D`
-    kwargs: keyword arguments to be passed to :code:`layer1D`. The keyword
-            :code:`pool_size` is handled by :code:`Pooling`.
+    Args:
+        * nside_in (integer): ``NSIDE`` parameter for the input maps.
+        * nside_out (integer): ``NSIDE`` parameter for the output maps.
+        * layer1D (layer object): a 1-D layer operation, like
+          :code:`kkeras.layers.MaxPooling1D`
+        * args (any): Positional arguments to be passed to :code:`layer1D`
+        * kwargs: keyword arguments to be passed to
+          :code:`layer1D`. The keyword :code:`pool_size` should not be
+          included, as it is handled automatically.
     """
 
     file_in = os.path.join(
@@ -105,7 +102,7 @@ def Pooling(nside_in, nside_out, layer1D, *args, **kwargs):
     try:
         pixel_indices = np.load(file_in)
     except:
-        pixel_indices = nnhealpix.map_ordering.dgrade(nside_in, nside_out)
+        pixel_indices = nnh.dgrade(nside_in, nside_out)
 
     def f(x):
         y = OrderMap(pixel_indices)(x)
@@ -118,54 +115,42 @@ def Pooling(nside_in, nside_out, layer1D, *args, **kwargs):
 
 
 def MaxPooling(nside_in, nside_out):
-    """ keras layer performing a downgrade+maxpooling of input maps
+    """Keras layer performing a downgrading+maxpooling of input maps
 
-    Parameters
-    ----------
-    nside_in : integer
-        Nside parameter for the input maps.
-        Must be a valid healpix Nside value
-    nside_out: integer
-        Nside parameter for the output maps.
-        Must be a valid healpix Nside value
+    Args:
+        * nside_in (integer): ``NSIDE`` parameter for the input maps.
+        * nside_out (integer): ``NSIDE`` parameter for the output maps.
     """
 
     return Pooling(nside_in, nside_out, keras.layers.MaxPooling1D)
 
 
 def AveragePooling(nside_in, nside_out):
-    """ keras layer performing a downgrade+average of input maps
+    """Keras layer performing a downgrading+averaging of input maps
 
-    Parameters
-    ----------
-    nside_in : integer
-        Nside parameter for the input maps.
-        Must be a valid healpix Nside value
-    nside_out: integer
-        Nside parameter for the output maps.
-        Must be a valid healpix Nside value
+    Args:
+        * nside_in (integer): ``NSIDE`` parameter for the input maps.
+        * nside_out (integer): ``NSIDE`` parameter for the output maps.
     """
 
     return Pooling(nside_in, nside_out, keras.layers.AveragePooling1D)
 
 
-def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
-    """ keras layer performing a downgrade+convolution of input maps
+def DegradeAndConvNeighbours(
+    nside_in, nside_out, filters, use_bias=False, trainable=True
+):
+    """Keras layer performing a downgrading and convolution of input maps.
 
-    Parameters
-    ----------
-    nside_in : integer
-        Nside parameter for the input maps.
-        Must be a valid healpix Nside value
-    nside_out: integer
-        Nside parameter for the output maps.
-        Must be a valid healpix Nside value
-    filters : integer
-        number of filters in the convolution
-    use_bias : bool (default is False)
-        whether the layer uses a bias vector
-    trainable : bool (default is True)
-        wheter this is a trainable layer
+    Args:
+        * nside_in (integer): ``NSIDE`` parameter for the input maps.
+        * nside_out (integer): ``NSIDE`` parameter for the output maps.
+        * filters (integer): Number of filters to use in the
+          convolution
+        * use_bias (bool): Whether the layer uses a bias vector or
+          not. Default is ``False``.
+        * trainable (bool): Wheter this is a trainable layer or
+          not. Default is ``True``.
+
     """
 
     file_in = os.path.join(
@@ -175,7 +160,7 @@ def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
     try:
         pixel_indices = np.load(file_in)
     except:
-        pixel_indices = nnhealpix.map_ordering.dgrade(nside_in, nside_out)
+        pixel_indices = nnh.dgrade(nside_in, nside_out)
 
     def f(x):
         y = OrderMap(pixel_indices)(x)
@@ -194,32 +179,30 @@ def ConvPixel(nside_in, nside_out, filters, use_bias=False, trainable=True):
 
 
 def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
-    """ keras layer performing the pixel neighbour covolution
+    """Keras layer to perform pixel neighbour convolution.
 
-    Parameters
-    ----------
-    nside : integer
-        Nside parameter for the input maps.
-        Must be a valid healpix Nside value
-    kernel_size: integer
-        dimension of the kernel.
-        Must be a valid number. For now only kernel_size=9 is admitted,
-        corresponding to the first neighbours convolution
-    filters : integer
-        number of filters in the convolution
-    use_bias : bool (default is False)
-        whether the layer uses a bias vector
-    trainable : bool (default is True)
-        wheter this is a trainable layer
+    Args:
+        * nside(integer): ``NSIDE`` parameter for the input maps.
+        * kernel_size(integer): Dimension of the kernel. Currently,
+          NNhealpix only supports ``kernelsize = 9`` (first-order
+          convolution).
+        * filters(integer): Number of filters to use in the
+          convolution
+        * use_bias(bool): Whether the layer uses a bias vector or
+          not. Default is ``False``.
+        * trainable(bool): Wheter this is a trainable layer or
+          not. Default is ``True``.
+
     """
 
     if kernel_size != 9:
         raise ValueError("kernel size must be 9")
-    file_in = nnhealpix.filter_file_name(nside, kernel_size)
+
+    file_in = nnh.filter_file_name(nside, kernel_size)
     try:
         pixel_indices = np.load(file_in)
     except:
-        pixel_indices = nnhealpix.map_ordering.filter(nside)
+        pixel_indices = nnh.filter(nside)
 
     def f(x):
         y = OrderMap(pixel_indices)(x)

@@ -1,8 +1,9 @@
 # -*- encoding: utf-8 -*-
 
+import numba
 import numpy as np
 import healpy as hp
-import numba
+
 from scipy.interpolate import griddata
 from scipy.ndimage.interpolation import zoom
 
@@ -11,14 +12,18 @@ from scipy.ndimage.interpolation import zoom
 def binned_map(signal, pixidx, mappixels, hits, reset_map=True):
     """Project a TOD onto a map.
 
-    Parameters
-    ----------
-    signal: A TOD containing the signal to be projected (1D vector)
-    pixidx: A TOD containing the index of the pixels (1D vector, same
-            length as `signal`)
-    mappixels: A Healpix map that will contain the projected signal
-    hits: A Healpix map of the same resolution as mappixels that will
+    This function implements a simple binner to project a TOD into a
+    map.
+
+    Args:
+
+        * signal: A TOD containing the signal to be projected (1D vector)
+        * pixidx: A TOD containing the index of the pixels (1D vector, same
+          length as `signal`)
+        * mappixels: A Healpix map that will contain the projected signal
+        * hits: A Healpix map of the same resolution as mappixels that will
           contain the number of hits
+
     """
 
     assert len(mappixels) == len(hits)
@@ -40,24 +45,22 @@ def binned_map(signal, pixidx, mappixels, hits, reset_map=True):
 def img2map(
     img, resultmap, resulthits, delta_theta, delta_phi, rot=np.eye(3), reset_map=True
 ):
-    """Projection of a 2D image on a Healpix map.
+    """Project a 2D image on a Healpix map.
 
-    Parameters
-    ----------
-    img: A 2D matrix containing the image to be projected on the map
-    resultmap: A Healpix map where to project the image
-    resulthits: A Healpix map of the same side as `resultmap`, which
-                will store the hit count per pixel of `resultmap`
-    delta_theta: the width of the image along the meridian, in degrees
-    delta_phi: the height of the image along the meridian, in degrees
-    rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object
-    reset_map: If True, both `resultmap` and `resulthits` will be zeroed
-               before doing the projection
+    Args:
+        * img: A 2D matrix containing the image to be projected on the map
+        * resultmap: A Healpix map where to project the image
+        * resulthits: A Healpix map of the same side as `resultmap`, which
+          will store the hit count per pixel of `resultmap`
+        * delta_theta: the width of the image along the meridian, in degrees
+        * delta_phi: the height of the image along the meridian, in degrees
+        * rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object
+        * reset_map: If True, both `resultmap` and `resulthits` will be zeroed
+          before doing the projection
 
-    Result
-    ------
-    A tuple containing the map and the hit map. Unseen pixels in the map
-    are set to zero.
+    Returns:
+        A tuple containing the map and the hit map. Unseen pixels in
+        the map are set to zero.
     """
 
     assert img.ndim == 2
@@ -112,21 +115,20 @@ def img2map(
 def img2healpix(img, nside, delta_theta, delta_phi, rot=np.eye(3)):
     """Projection of a 2D image on a Healpix map.
 
-    This function is a wrapper to `img2map`. Use the latter function
-    if you have already allocated a map.
+    This function is a wrapper to :func:`nnhealpix.img2map`. Use the
+    latter function if you have already allocated a map.
 
-    Parameters
-    ----------
-    img: A 2D matrix containing the image to be projected on the map
-    nside: The resolution of the Healpix map
-    delta_theta: the width of the image along the meridian, in degrees
-    delta_phi: the height of the image along the meridian, in degrees
-    rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object
+    Args:
+        * img: A 2D matrix containing the image to be projected on the
+        * map nside (int): The resolution of the Healpix map
+        * delta_theta (float): the width of the image along the
+        * meridian, in degrees delta_phi (float): the height of the
+        * image along the meridian, in degrees rot: Either a 3×3
+        * matrix or a `healpy.rotator.Rotator` object
 
-    Result
-    ------
-    A tuple containing the map and the hit map. Unseen pixels in the map
-    are set to zero.
+    Returns:
+        A tuple containing the map and the hit map. Unseen pixels in
+        the map are set to zero.
     """
 
     assert hp.isnsideok(nside)
@@ -144,48 +146,46 @@ class projectimages:
     """Project a randomly chosen set of 2D images on Healpix maps.
 
     This class returns an iterator that produces a set of Healpix maps
-    given a number of 2D images.
+    given a number of 2D images. It can be used in :code:`for` loops
+    to produce datasets for training convolutional neural networks.
 
-    Parameters
-    ----------
-    images: array-like
-        3D tensor with shape [n, width, height], where "n" is the
-        number of images and width×width is the size of each 2D image
-    nside: integer
-        resolution of the Healpix maps
-    delta_theta: float, 2-tuple
-        Either the size along the theta axis of the image (before
-        applying any rotation), or a range (min, max). In the latter
-        case, each map will have delta_theta picked randomly within
-        the range.
-    delta_phi: float, 2-tuple
-        Same as delta_phi, but along the phi direction
-    num: integer (optional)
-        If specified, the iterator will run "num" times. Otherwise,
-        it will loop forever.
-    rot: Either a 3×3 matrix or a `healpy.rotator.Rotator` object (optional)
+    Args:
 
-    Return value
-    ------------
-    Each iteration returns a pair (num, pixels) containing the index
-    of the image projected on the map and the pixels of the map itself.
-    The value of "num" is always in the range [0, images.shape[0] - 1).
+        * images (array): 3D tensor with shape ``[n, width, height]``,
+          where ``n`` is the number of images and ``width×width`` is
+          the size of each 2D image
+        * nside (int): resolution of the Healpix maps
+        * delta_theta (float, or 2-tuple of floats): Either the size
+          along the theta axis of the image (before applying any
+          rotation), or a range ``(min, max)``. In the latter case,
+          each map will have delta_theta picked randomly within the
+          range.
+        * delta_phi (float, or 2-tuple of floats): Same as
+          :param:`delta_phi`, but along the phi direction
+        * num (int): If specified, the iterator will run "num"
+          times. Otherwise, it will loop forever.
+        * rot: Either a 3×3 matrix or a ``healpy.rotator.Rotator``
+          object (optional)
 
-    Example
-    -------
+    Returns:
+        Each iteration returns a pair (num, pixels) containing the
+        index of the image projected on the map and the pixels of the
+        map itself.  The value of "num" is always in the range [0,
+        images.shape[0] - 1).
 
-    `````
-    import nnhealpix as nnh
-    import numpy as np
-    import healpy
-    from keras.datasets import mnist
+    Example::
 
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+        import nnhealpix as nnh
+        import numpy as np
+        import healpy
+        from keras.datasets import mnist
 
-    for idx, pixels in nnh.projectimages(x_train, 64, 30.0, 30.0, num=5):
-        print('Image index: {0}, digit is {1}'.format(idx, y_train[idx]))
-        healpy.mollview(pixels)
-    `````
+        (x_train, y_train), (x_test, y_test) = mnist.load_data()
+
+        for idx, pixels in nnh.projectimages(x_train, 64, 30.0, 30.0, num=5):
+            print('Image index: {0}, digit is {1}'.format(idx, y_train[idx]))
+            healpy.mollview(pixels)
+
     """
 
     def __init__(self, images, nside, delta_theta, delta_phi, rot=None, num=None):
@@ -251,30 +251,23 @@ class projectimages:
 
 
 def img2healpix_planar(img, nside, thetac, phic, delta_theta, delta_phi, rot=None):
-    """projection of a 2D image on healpix map
+    """Project a 2D image on healpix map
 
-    Parameters
-    ----------
-    img: array-like
-        image to project, must have shape = (#img, M, N)
-    nside: integer
-        Nside parameter for the output map.
-        Must be a valid healpix Nside value
-    thetac, phic: float
-        coordinate (in degrees) where to project the center of the image on the healpix map.
-        Must follow the healpix angle convention:
-        0 <= thetac <= 180    with 0 being the N and 180 the S Pole
-        0 <= phic <= 360      with 0 being at the center of the map, then it
-                              increases moving towards W
-    delta_theta, delta_phi: float
-        dimension of the projected image
-    rot: None
-        Not yet implemented!
+    Args:
+        * img (array): image to project. It must have shape ``(#img,
+          M, N)``
+        * nside (int): ``NSIDE`` parameter for the output map.
+        * thetac, phic (float): coordinates (in degrees) where to
+          project the center of the image on the healpix map. They
+          must follow the HEALPix angle convention:
+            - ``0 <= thetac <= 180``, with 0 being the N and 180 the S Pole
+            - ``0 <= phic <= 360``, with 0 being at the center of the
+              map. It increases moving towards W
+        * delta_theta, delta_phi (float): angular size of the projected image
+        * rot: not implemented yet!
 
-    Returns
-    -------
-    hp_map : array
-        output healpix map with the image projection
+    Returns:
+        The HEALPix map containing the projected image.
     """
 
     imgf = np.flip(img, axis=2)

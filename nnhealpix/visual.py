@@ -5,7 +5,7 @@ import healpy.projaxes as pa
 import numpy as np
 import keras
 from keras.models import load_model
-from nnhealpix.map_ordering import *
+import nnhealpix as nnh
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib.colors import LinearSegmentedColormap
@@ -46,18 +46,13 @@ def draw_filter(
 ):
     """Return a 2D image of a filter.
 
-    Parameters
-    ----------
-    weights: array
-        array of filter weights
-    order: integer
-        order of the filter (1st, 2nd neighbours)
-        only 1 impented!
+    Args:
+        * weights (array): Array of filter weights
+        * order (int): Order of the filter (1st, 2nd neighbours). So
+          far only ``order=1`` works.
 
-    Returns
-    ------------
-    img: array
-        2D image of the input filter
+    Returns:
+        An array containing the 2-D grayscale image of the input filter.
     """
 
     order_fn = {1: pixel_1st_neighbours, 2: pixel_2nd_neighbours}
@@ -100,9 +95,6 @@ def filter_plot_layout(num_of_filters):
     This function returns a tuple containing the number of plots per
     row in each of the rows that are produced via a call to
     `plot_filters`.
-
-    Example
-    -------
 
     >>> filter_plot_layout(7)
     (4, 3)
@@ -189,16 +181,17 @@ def filter_plot_axis_extents(layout, cbar_space=False):
 def filter_plot_size(layout, basesize):
     """Return the size (in inches) of the plot produced by `plot_filters`
 
-    Parameters
-    ----------
-    layout: list of tuples
-        the result of a call to `filter_plot_layout`
-    basesize: float
-        the size (in inches) to be used to plot each of the filters
+    Args:
 
-    Returns
-    -------
-    A 2-element tuple containing the width and height in inches of the plot.
+        * layout (list of tuples): The result of a call to
+          :func:`nnhealpix.visual.filter_plot_layout`
+
+        * basesize (float): Size (in inches) to be used to plot each
+          of the filters
+
+    Returns:
+        A 2-element tuple containing the width and height in inches of
+        the plot.
     """
 
     nrows, ncols = len(layout), max(layout)
@@ -224,37 +217,33 @@ def plot_filters(
     val2str=val2str,
     basesize=3,
 ):
-    """plot a set of filters.
+    """Plot a set of filters.
 
-    Parameters
-    ----------
-    filters: array
-        array of filters to plot
-    cmap: color map
-        if None a pick/black color map will be used in the plot
-    cbar: boolean
-        whether or not to add colorbar to the plot.
-        Default is False
-    vmin, vmax: float
-        min and max value for the color map, if None they are the min and max
-        values of the set of filters
-    show_titles: Boolean (default: False)
-        if True, write a title above each filter
-    titlefn: function (default: None)
-        a function returning a string for the title of each filter. It should
-        take one integer parameter, which is the progressive number of the filter
-        starting from zero
-    show_values: Boolean (default: False)
-        if True, display the value of the filter on each pixel
-    val2str: function (default: str)
-        function to convert the value of each pixel in the filter into a
-        string, used when `show_values` is True.
-    basesize: double (default: 4)
-        size (in inches) of one of the Gnomonic views to be displayed
+    Args:
+        * filters (array): Array of filters to plot
+        * cmap (color map): If ``None``, a pick/black color map will
+          be used in the plot
+        * cbar (boolean): Whether or not to add colorbar to the
+          plot. Default is False
+        * vmin, vmax (float): Minimum and maximum value for the color
+          map. If ``None``, they are computed from the actual values
+          in the set of filters.
+        * show_titles (Boolean): If True, write a title above each
+          filter. Default is ``False``.
+        * titlefn (function): A function returning a string for the
+          title of each filter. It should take one integer parameter,
+          which is the progressive number of the filter starting from
+          zero. The default is ``None`` (no title).
+        * show_values (Boolean). If True, display the value of the
+          filter on each pixel (default is ``False``).
+        * val2str (function): Function to convert the value of each
+          pixel in the filter into a string, used when `show_values`
+          is True (default is ``str``).
+        * basesize (float): Size (in inches) of one of the Gnomonic
+          views to be displayed. The default is 4 inches.
 
-    Returns
-    ------------
-    fig: figure
+    Returns:
+        The figure containing the filter plots.
     """
 
     if not cmap:
@@ -308,15 +297,11 @@ def plot_filters(
 def map_img(map_in, order=1):
     """Return a 2D image of a filter.
 
-    Parameters
-    ----------
-    map: array
-        map to plot
+    Args:
+        * map (array): The map to plot
 
-    Returns
-    ------------
-    map_img: array
-        2D image of the input filter
+    Returns:
+        A 2-D image of the input filter.
     """
 
     img = hp.mollview(map_in, notext=True, return_projected_map=True)
@@ -328,27 +313,22 @@ def map_img(map_in, order=1):
 def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None, verbose=True):
     """plot a the effect of filters on maps in a given layer of the network.
 
-    Parameters
-    ----------
-    maps: array
-        output maps of the layer to plot
-    cmap: color map
-        if None a pick/black color map will be used in the plot
-    cbar: boolean
-        whether or not to add colorbar to the plot.
-        Default is False
-    vmin, vmax: float
-        min and max value for the color map, if None they are the min and max
-        values of the set of maps
-    count: boolean
-        whether to return or not the number of active nodes in the layer,
-        default is True
-    verbose: boolean
-        if True, print a summary of the active nodes
+    Args:
+        * maps (array): Output maps of the layer to plot
+        * cmap (color map): If ``None``, a pick/black color map will
+          be used in the plot
+        * cbar (Boolean): Whether or not to add a colorbar to the
+          plot. Default is ``False``.
+        * vmin, vmax (float): The minimum and maximum value for the
+          color map. If ``None``, they are computed from the actual
+          values of the pixels in `maps`.
+        * count (Boolean): Whether to return or not the number of
+          active nodes in the layer.  Default is ``True``.
+        * verbose (Boolean): If ``True``, print a summary of the
+          active nodes.
 
-    Returns
-    ------------
-    fig: figure
+    Returns:
+        A figure containing the plot.
     """
 
     if not cmap:
@@ -410,40 +390,35 @@ def plot_layer_nodes(
     figsize=None,
     plot=True,
 ):
-    """return a map of the active nodes in a give layer and plot it
+    """Create a map of the active nodes in a given layer
 
-    Parameters
-    ----------
-    model: keras model object
-        Neural network model to analyze.
-    layer: int
-        number defining the layer in model to analyze.
-    X_val: array-like
-        set of inputs used for network validation.
-    binary: boolean
-        if True the value of each node will be set to one if the node is active
-        if False they are set equal to the rms of the map.
-        Default is False.
-    cmap: color map
-        if None a pick/black color map will be used in the plot.
-    show_titles: Boolean (default: False)
-        if True, write a title above each filter
-    titlefn: function (default: None)
-        a function returning a string for the title of each filter. It should
-        take one integer parameter, which is the progressive number of the filter
-        starting from zero
-    figsize: 2-element tuple
-        size of the figure, in inches. If not provided, a sensible size
-        will be figured out
-    plot: boolean
-        if True a plot with the map of the active nodes in the layer will be
-        shown. Default is True.
+    Args:
+        * model (Keras model object): Neural network model to analyze.
+        * layer (int): number of the layer to analyze.
+        * X_val (array-like): Set of inputs used for network
+          validation.
+        * binary (Boolean): If ``True``, the value of each node will
+          be set to one if the node is active.  If ``False``, they are
+          set equal to the RMS of the map. The default is ``False``.
+        * cmap (color map): If ``None``, a gray/black color map will
+          be used in the plot.
+        * show_titles (Boolean): If ``True``, write a title above each
+          filter. The default is ``False``.
+        * titlefn (function): A function returning a string for the
+          title of each filter. It should take one integer parameter,
+          which is the progressive number of the filter starting from
+          zero. If not specified, a custom title containin the
+          progressive number of the plot will be used.
+        * figsize (2-element tuple): Size of the figure, in inches. If
+          not provided, a sensible size will be figured out.
+        * plot (Boolean): If ``True``, a plot with the map of the
+          active nodes in the layer will be shown. Default is True.
 
-    Returns
-    ------------
-    nodes: array-like
-        matrix with the map of active nodes in the layer.
-    fig: figure
+    Returns:
+        A 2-element tuple containing the following elements:
+
+        1. A matrix containing the map of active nodes in the layer;
+        2. A figure containing the plot.
     """
 
     if not cmap:
