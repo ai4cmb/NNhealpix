@@ -65,11 +65,9 @@ def Dgrade(nside_in, nside_out):
 
     file_in = os.path.join(
         os.path.dirname(__file__),
-        os.path.join(
-            "..",
-            "ancillary_files",
-            "dgrade_from{}_to{}.npy".format(nside_in, nside_out),
-        ),
+        "..",
+        "ancillary_files",
+        "dgrade_from{}_to{}.npy".format(nside_in, nside_out),
     )
     try:
         pixel_indices = np.load(file_in)
@@ -101,7 +99,9 @@ def Pooling(nside_in, nside_out, layer1D, *args, **kwargs):
 
     file_in = os.path.join(
         os.path.dirname(__file__),
-        "../ancillary_files/dgrade_from{}_to{}".format(nside_in, nside_out),
+        "..",
+        "ancillary_files",
+        "dgrade_from{}_to{}".format(nside_in, nside_out),
     )
     try:
         pixel_indices = np.load(file_in)
