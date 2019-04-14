@@ -261,6 +261,9 @@ def __write_ancillary_file(file_name, array):
 
     """
 
+    # Be sure that the path were we want to save the file already exists
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
     if not os.path.isfile(file_name):
         np.savez_compressed(file_name, arr=array)
 
