@@ -55,7 +55,7 @@ def draw_filter(
         An array containing the 2-D grayscale image of the input filter.
     """
 
-    order_fn = {1: pixel_1st_neighbours, 2: pixel_2nd_neighbours}
+    order_fn = {1: nnh.pixel_1st_neighbours, 2: nnh.pixel_2nd_neighbours}
     assert (
         order in order_fn.keys()
     ), "invalid order ({0}) passed to filter, valid values are {1}".format(
