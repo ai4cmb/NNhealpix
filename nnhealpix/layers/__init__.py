@@ -101,7 +101,7 @@ def Pooling(nside_in, nside_out, layer1D, *args, **kwargs):
         os.path.dirname(__file__),
         "..",
         "ancillary_files",
-        "dgrade_from{}_to{}".format(nside_in, nside_out),
+        "dgrade_from{}_to{}.npy".format(nside_in, nside_out),
     )
     try:
         pixel_indices = np.load(file_in)
@@ -159,7 +159,9 @@ def DegradeAndConvNeighbours(
 
     file_in = os.path.join(
         os.path.dirname(__file__),
-        "../ancillary_files/dgrade_from{}_to{}".format(nside_in, nside_out),
+        "..",
+        "ancillary_files",
+        "dgrade_from{}_to{}.npy".format(nside_in, nside_out),
     )
     try:
         pixel_indices = np.load(file_in)
