@@ -14,21 +14,9 @@ networks to spherical signal projected on the healpix grid.
 - SciPy
 - TensorFlow
 
-To build the code, you are advised to use
-[Filt](https://pypi.org/project/flit/).
-
 ## Install
 
-The code is under development therefore to install it just use:
-
-```bash
-git clone git@github.com:ai4cmb/NNhealpix.git
-flit install --symlink [--python path/to/python]
-```
-
-If you do not want to use Flit, you can install the library using the
-following command:
-
+The code is still under development. To install, use the following command:
 ```
 [sudo] python setup.py develop [--user]
 ```
