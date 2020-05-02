@@ -8,7 +8,6 @@ networks to spherical signal projected on the healpix grid.
 ## Requirements
 
 - Healpy
-- Keras 2.3.1+
 - Matplotlib
 - NumPy
 - Numba
