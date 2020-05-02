@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/aurelio-amerio/NNhealpix.svg?branch=master)](https://travis-ci.com/aurelio-amerio/NNhealpix)
 # NNhealpix
 
 This is a package to apply neural networks and convolutional neural
@@ -7,20 +8,23 @@ networks to spherical signal projected on the healpix grid.
 ## Requirements
 
 - Healpy
-- Keras
 - Matplotlib
 - NumPy
 - Numba
 - SciPy
-- TensorFlow
+- Tensorflow 2+
 
 ## Install
 
 The code is still under development. To install, use the following command:
-```
+```bash
 [sudo] python setup.py develop [--user]
 ```
 
+To automatically install the requirements, use the following command:
+```bash
+pip install -r requirements.txt
+```
 
 ## Testing
 

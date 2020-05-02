@@ -10,7 +10,7 @@ sphere.
 import healpy as hp
 import numpy as np
 import os.path
-import numba
+# import numba
 
 __version__ = "0.1.0"
 
@@ -21,12 +21,12 @@ DATADIR = os.path.expanduser(
 
 
 def dgrade_file_name(nside_in, nside_out):
-    "Return the full path to the datafile used to perform downgrading."
+    """Return the full path to the datafile used to perform downgrading."""
     return os.path.join(DATADIR, "dgrade_from{}_to{}.npz".format(nside_in, nside_out))
 
 
 def filter_file_name(nside, order):
-    "Return the full path to the datafile used to apply the convolution filter."
+    """Return the full path to the datafile used to apply the convolution filter."""
     return os.path.join(DATADIR, "filter_nside{0}_order{1}.npz".format(nside, order))
 
 

@@ -15,27 +15,27 @@ These layers can be intertwined with Keras layers, as in the following
 example::
 
   # Build a simple classification NN
-  import keras
+  import tensorflow.keras
   import nnhealpix.layers
 
   # Take NSIDE=32 maps as input, and go through NSIDE=8 maps
   NSIDE_INPUT = 32
   NSIDE_OUTPUT = 8
   
-  inputs = keras.layers.Input(shape)
+  inputs =tf.keras.layers.Input(shape)
   
   x = nnhealpix.layers.ConvNeighbours(NSIDE_INPUT, filters=32, kernel_size=9)(inputs)
-  x = keras.layers.Activation('relu')(x)
+  x =tf.keras.layers.Activation('relu')(x)
   x = nnhealpix.layers.MaxPooling(NSIDE_INPUT, NSIDE_OUTPUT)(x)
-  x = keras.layers.Dropout(0.2)(x)
-  x = keras.layers.Flatten()(x)
-  x = keras.layers.Dense(128)(x)
-  x = keras.layers.Activation('relu')(x)
-  x = keras.layers.Dense(num_classes)(x)
-  out = keras.layers.Activation('softmax')(x)
+  x =tf.keras.layers.Dropout(0.2)(x)
+  x =tf.keras.layers.Flatten()(x)
+  x =tf.keras.layers.Dense(128)(x)
+  x =tf.keras.layers.Activation('relu')(x)
+  x =tf.keras.layers.Dense(num_classes)(x)
+  out =tf.keras.layers.Activation('softmax')(x)
   
-  model = keras.models.Model(inputs=inputs, outputs=out)
-  model.compile(loss=keras.losses.mse, optimizer='adam', metrics=['accuracy'])
+  model =tf.keras.models.Model(inputs=inputs, outputs=out)
+  model.compile(loss=tf.keras.losses.mse, optimizer='adam', metrics=['accuracy'])
 
 Convolutional layer
 -------------------

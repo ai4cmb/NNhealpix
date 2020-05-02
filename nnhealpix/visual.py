@@ -3,13 +3,12 @@
 import healpy as hp
 import healpy.projaxes as pa
 import numpy as np
-import keras
-from keras.models import load_model
+# import tensorflow.keras
+# from tensorflow.keras.models import load_model
 import nnhealpix as nnh
 import matplotlib.pyplot as plt
-import matplotlib
 from matplotlib.colors import LinearSegmentedColormap
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 CMAP_GRAY_TO_BLACK = LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
 CMAP_WHITE_TO_BLACK = LinearSegmentedColormap.from_list("", ["#FEFAFA", "black"])
@@ -31,18 +30,18 @@ def val2str(val):
 
 
 def draw_filter(
-    fig,
-    weights,
-    extent,
-    cmap,
-    sub=None,
-    order=1,
-    vmin=None,
-    vmax=None,
-    xsize=600,
-    ysize=600,
-    show_values=False,
-    val2str=val2str,
+        fig,
+        weights,
+        extent,
+        cmap,
+        sub=None,
+        order=1,
+        vmin=None,
+        vmax=None,
+        xsize=600,
+        ysize=600,
+        show_values=False,
+        val2str=val2str,
 ):
     """Return a 2D image of a filter.
 
@@ -57,7 +56,7 @@ def draw_filter(
 
     order_fn = {1: nnh.pixel_1st_neighbours, 2: nnh.pixel_2nd_neighbours}
     assert (
-        order in order_fn.keys()
+            order in order_fn.keys()
     ), "invalid order ({0}) passed to filter, valid values are {1}".format(
         order, ", ".join([str(x) for x in order_fn.keys()])
     )
@@ -202,20 +201,20 @@ def filter_plot_size(layout, basesize):
     width = min(ncols * basesize, 12)
     height = nrows * basesize
 
-    return (width, height)
+    return width, height
 
 
 def plot_filters(
-    filters,
-    cmap=None,
-    cbar=False,
-    vmin=None,
-    vmax=None,
-    show_titles=False,
-    titlefn=None,
-    show_values=False,
-    val2str=val2str,
-    basesize=3,
+        filters,
+        cmap=None,
+        cbar=False,
+        vmin=None,
+        vmax=None,
+        show_titles=False,
+        titlefn=None,
+        show_values=False,
+        val2str=val2str,
+        basesize=3,
 ):
     """Plot a set of filters.
 
@@ -380,20 +379,20 @@ def plot_layer_output(maps, cmap=None, cbar=False, vmin=None, vmax=None, verbose
 
 
 def plot_layer_nodes(
-    model,
-    layer,
-    X_val,
-    binary=False,
-    cmap=None,
-    show_titles=False,
-    titlefn=None,
-    figsize=None,
-    plot=True,
+        model,
+        layer,
+        X_val,
+        binary=False,
+        cmap=None,
+        show_titles=False,
+        titlefn=None,
+        figsize=None,
+        plot=True,
 ):
     """Create a map of the active nodes in a given layer
 
     Args:
-        * model (Keras model object): Neural network model to analyze.
+        * model (keras model object): Neural network model to analyze.
         * layer (int): number of the layer to analyze.
         * X_val (array-like): Set of inputs used for network
           validation.
