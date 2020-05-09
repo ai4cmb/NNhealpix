@@ -1,11 +1,10 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
-import keras
 import os.path
-from keras.layers import Conv1D
-import keras.backend as K
-from keras.engine.topology import Layer
+from tensorflow.keras.layers import Conv1D
+import tensorflow.keras.backend as K
+from tensorflow.keras.layers import Layer
 import tensorflow as tf
 import nnhealpix as nnh
 
@@ -22,17 +21,18 @@ class OrderMap(Layer):
     def __init__(self, indices, **kwargs):
         self.input_indices = np.array(indices, dtype="int32")
         Kindices = K.variable(indices, dtype="int32")
-        self.indices = Kindices
+        self.indices = K.stop_gradient(Kindices)
         super(OrderMap, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        "Create the weights for the layer"
+        """Create the weights for the layer"""
         self.in_shape = input_shape
         super(OrderMap, self).build(input_shape)
 
     def call(self, x):
-        "Implement the layer's logic"
-        x = tf.to_float(x)
+        """Implement the layer's logic"""
+        # x = tf.to_float(x)
+        x = tf.cast(x, dtype=tf.float32)
         zero = tf.fill([tf.shape(x)[0], 1, tf.shape(x)[2]], 0.0)
         x1 = tf.concat([x, zero], axis=1)
         reordered = tf.gather(x1, self.indices, axis=1)
@@ -40,7 +40,7 @@ class OrderMap(Layer):
         return reordered
 
     def compute_output_shape(self, input_shape):
-        "Compute the shape of the layer's output."
+        """Compute the shape of the layer's output."""
         return (input_shape[0], int(self.output_dim[1]), int(self.output_dim[2]))
 
     def get_config(self):
@@ -77,7 +77,7 @@ def Dgrade(nside_in, nside_out):
     def f(x):
         y = OrderMap(pixel_indices)(x)
         pool_size = int((nside_in / nside_out) ** 2.0)
-        y = keras.layers.AveragePooling1D(pool_size=pool_size)(y)
+        y = tf.keras.layers.AveragePooling1D(pool_size=pool_size)(y)
         return y
 
     return f
@@ -90,7 +90,7 @@ def Pooling(nside_in, nside_out, layer1D, *args, **kwargs):
         * nside_in (integer): ``NSIDE`` parameter for the input maps.
         * nside_out (integer): ``NSIDE`` parameter for the output maps.
         * layer1D (layer object): a 1-D layer operation, like
-          :code:`kkeras.layers.MaxPooling1D`
+          :code:`keras.layers.MaxPooling1D`
         * args (any): Positional arguments to be passed to :code:`layer1D`
         * kwargs: keyword arguments to be passed to
           :code:`layer1D`. The keyword :code:`pool_size` should not be
@@ -126,7 +126,7 @@ def MaxPooling(nside_in, nside_out):
         * nside_out (integer): ``NSIDE`` parameter for the output maps.
     """
 
-    return Pooling(nside_in, nside_out, keras.layers.MaxPooling1D)
+    return Pooling(nside_in, nside_out, tf.keras.layers.MaxPooling1D)
 
 
 def AveragePooling(nside_in, nside_out):
@@ -137,11 +137,11 @@ def AveragePooling(nside_in, nside_out):
         * nside_out (integer): ``NSIDE`` parameter for the output maps.
     """
 
-    return Pooling(nside_in, nside_out, keras.layers.AveragePooling1D)
+    return Pooling(nside_in, nside_out, tf.keras.layers.AveragePooling1D)
 
 
 def DegradeAndConvNeighbours(
-    nside_in, nside_out, filters, use_bias=False, trainable=True
+        nside_in, nside_out, filters, use_bias=False, trainable=True
 ):
     """Keras layer performing a downgrading and convolution of input maps.
 
@@ -171,7 +171,7 @@ def DegradeAndConvNeighbours(
     def f(x):
         y = OrderMap(pixel_indices)(x)
         kernel_size = int((nside_in / nside_out) ** 2.0)
-        y = keras.layers.Conv1D(
+        y = Conv1D(
             filters,
             kernel_size=kernel_size,
             strides=kernel_size,
@@ -212,7 +212,7 @@ def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
 
     def f(x):
         y = OrderMap(pixel_indices)(x)
-        y = keras.layers.Conv1D(
+        y = Conv1D(
             filters,
             kernel_size=kernel_size,
             strides=kernel_size,

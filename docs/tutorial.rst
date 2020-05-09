@@ -18,9 +18,9 @@ available in Keras, so we simply load it:
 
 .. code:: ipython3
 
-    import keras
-    from keras.datasets import mnist
-    from keras import backend as K
+    import tensorflow.keras
+    from tensorflow.keras.datasets import mnist
+    from tensorflow.keras import backend as K
     K.set_image_dim_ordering("th")
 
     (X_train_2d, y_train), (X_val_2d, y_val) = mnist.load_data()
@@ -52,7 +52,7 @@ apply a random rotation to each of them.
 .. code:: ipython3
 
     import healpy as hp
-    from keras.utils import np_utils
+    from tensorflow.keras.utils import to_categorical
     from nnhealpix.projections import projectimages
 
     NTRAIN, NVAL = 10000, 1000
@@ -87,8 +87,8 @@ apply a random rotation to each of them.
     )):
         X_val_hp[i, :] = hp_img
         y_val_hp[i] = y_val[id_img]
-    y_train = np_utils.to_categorical(y_train_hp)
-    y_val = np_utils.to_categorical(y_val_hp)
+    y_train = to_categorical(y_train_hp)
+    y_val = to_categorical(y_val_hp)
 
 
 Let's check that the projection went well by plotting one of them using the
@@ -136,37 +136,37 @@ instead of Keras' 2-D layers we use :class:`nnhealpix.layers.ConvNeighbours`,
 
 .. code:: ipython3
 
-    import keras.layers
+    import tensorflow.keras.layers
     import nnhealpix.layers
 
-    inputs = keras.layers.Input(shape)
+    inputs =tf.keras.layers.Input(shape)
     x = nnhealpix.layers.ConvNeighbours(NSIDE, filters=32, kernel_size=9)(inputs)
-    x = keras.layers.Activation("relu")(x)
+    x =tf.keras.layers.Activation("relu")(x)
     x = nnhealpix.layers.MaxPooling(NSIDE, NSIDE//2)(x)
     x = nnhealpix.layers.ConvNeighbours(NSIDE//2, filters=32, kernel_size=9)(x)
-    x = keras.layers.Activation("relu")(x)
+    x =tf.keras.layers.Activation("relu")(x)
     x = nnhealpix.layers.MaxPooling(NSIDE//2, NSIDE//4)(x)
     x = nnhealpix.layers.ConvNeighbours(NSIDE//4, filters=32, kernel_size=9)(x)
-    x = keras.layers.Activation("relu")(x)
+    x =tf.keras.layers.Activation("relu")(x)
     x = nnhealpix.layers.MaxPooling(NSIDE//4, NSIDE//8)(x)
     x = nnhealpix.layers.ConvNeighbours(NSIDE//8, filters=32, kernel_size=9)(x)
-    x = keras.layers.Activation("relu")(x)
+    x =tf.keras.layers.Activation("relu")(x)
     x = nnhealpix.layers.MaxPooling(NSIDE//8, NSIDE//16)(x)
-    x = keras.layers.Dropout(0.2)(x)
-    x = keras.layers.Flatten()(x)
-    x = keras.layers.Dense(48)(x)
-    x = keras.layers.Activation("relu")(x)
-    x = keras.layers.Dense(num_classes)(x)
-    out = keras.layers.Activation("softmax")(x)
+    x =tf.keras.layers.Dropout(0.2)(x)
+    x =tf.keras.layers.Flatten()(x)
+    x =tf.keras.layers.Dense(48)(x)
+    x =tf.keras.layers.Activation("relu")(x)
+    x =tf.keras.layers.Dense(num_classes)(x)
+    out =tf.keras.layers.Activation("softmax")(x)
 
 The convolution and pooling layers produce intermediate maps whose resolution
 scales down to ``NSIDE=1``. Let's build our model using Keras:
 
 .. code:: ipython3
 
-    model = keras.models.Model(inputs=inputs, outputs=out)
-    opt = keras.optimizers.Adam(lr=0.001)
-    model.compile(loss=keras.losses.mse, optimizer=opt, metrics=["accuracy"])
+    model =tf.keras.models.Model(inputs=inputs, outputs=out)
+    opt =tf.keras.optimizers.Adam(lr=0.001)
+    model.compile(loss=tf.keras.losses.mse, optimizer=opt, metrics=["accuracy"])
 
 
 We train the network, using the ``X_train`` and ``Y_train`` variables we have
@@ -214,7 +214,7 @@ ipython3
         X_test_hp[i, :] = hp_img
         y_test_hp[i] = y_test[id_img]
     
-    y_test = np_utils.to_categorical(y_test_hp)
+    y_test = to_categorical(y_test_hp)
 
     X_test = X_test_hp.reshape(X_test_hp.shape[0], len(X_test_hp[0]), 1).astype("float32")
     X_test = X_test / 255
@@ -248,7 +248,7 @@ Krachmalnicoff & Tomasi 2019 (https://arxiv.org/abs/1902.04083).
 
 .. code:: ipython3
 
-    from keras.models import load_model
+    from tensorflow.keras.models import load_model
 
     # You can find the .h5 file under the examples/ directory
     modelPT = load_model(
