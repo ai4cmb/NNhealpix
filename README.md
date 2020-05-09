@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/aurelio-amerio/NNhealpix.svg?branch=master)](https://travis-ci.com/aurelio-amerio/NNhealpix)
+[![Build Status](https://travis-ci.com/ai4cmb/NNhealpix.svg?branch=master)](https://travis-ci.com/ai4cmb/NNhealpix)
 # NNhealpix
 
 This is a package to apply neural networks and convolutional neural
