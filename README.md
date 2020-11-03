@@ -14,6 +14,8 @@ networks to spherical signal projected on the healpix grid.
 - SciPy
 - Tensorflow 2+
 
+If you prefer to use PyTorch instead of Keras/TensorFlow, [**aasensio**](https://github.com/aasensio) has implemented a port of the library available here: [github.com/aasensio/sphericalCNN](https://github.com/aasensio/sphericalCNN).
+
 ## Install
 
 The code is still under development. To install, use the following command:
