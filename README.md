@@ -34,6 +34,22 @@ To run a suite of tests, you must have either `nosetests` or
 `pytest`. Just run `nosetests` or `pytest` within the `NNhealpix`
 folder.
 
+## Citing
+
+If you use this code, please cite the following paper: *Convolutional neural networks on the HEALPix sphere: a pixel-based algorithm and its application to CMB data analysis*, Krachmalnicoff, N. & Tomasi, M. (A&A, Aug 2019).
+
+```
+@article{ KrachmalnicoffTomasi2019,
+	author = {{Krachmalnicoff, N.} and {Tomasi, M.}},
+	title = {Convolutional neural networks on the HEALPix sphere: a pixel-based algorithm and its application to CMB data analysis},
+	DOI= "10.1051/0004-6361/201935211",
+	url= "https://doi.org/10.1051/0004-6361/201935211",
+	journal = {A\&A},
+	year = 2019,
+	volume = 628,
+	pages = "A129",
+}
+```
 
 ## License
 
