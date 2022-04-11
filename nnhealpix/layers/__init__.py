@@ -83,6 +83,36 @@ def Dgrade(nside_in, nside_out):
     return f
 
 
+def Ugrade(nside_in, nside_out):
+    """Keras layer performing a downgrade of input maps
+
+    Parameters
+    ----------
+    nside_in : integer
+        Nside parameter for the input maps.
+        Must be a valid healpix Nside value
+    nside_out: integer
+        Nside parameter for the output maps.
+        Must be a valid healpix Nside value
+    """
+
+    file_in = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "ancillary_files",
+        "upgrade_from{}_to{}.npy".format(nside_in, nside_out),
+    )
+    try:
+        pixel_indices = np.load(file_in)
+    except:
+        pixel_indices = nnh.upgrade(nside_in, nside_out)
+
+    def f(x):
+        y = OrderMap(pixel_indices)(x)
+        return y
+
+    return f
+
 def Pooling(nside_in, nside_out, layer1D, *args, **kwargs):
     """Keras layer performing a downgrade+custom pooling of input maps
 

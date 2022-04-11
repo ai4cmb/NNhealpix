@@ -24,6 +24,10 @@ def dgrade_file_name(nside_in, nside_out):
     """Return the full path to the datafile used to perform downgrading."""
     return os.path.join(DATADIR, "dgrade_from{}_to{}.npz".format(nside_in, nside_out))
 
+def upgrade_file_name(nside_in, nside_out):
+    """Return the full path to the datafile used to perform upgrading."""
+    return os.path.join(DATADIR, "upgrade_from{}_to{}.npz".format(nside_in, nside_out))
+
 
 def filter_file_name(nside, order):
     """Return the full path to the datafile used to apply the convolution filter."""
@@ -103,6 +107,42 @@ def dgrade(nside_in, nside_out):
         file_name = dgrade_file_name(nside_in, nside_out)
         __write_ancillary_file(file_name, result)
         return result
+
+    
+def upgrade(nside_in, nside_out):
+    """ map ordering to up grade an healpix map
+
+    Parameters
+    ----------
+    nside_in : integer
+        Nside parameter for the input map.
+        Must be a valid healpix Nside value
+    nside_out: integer
+        Nside parameter for the output map.
+        Must be a valid healpix Nside value
+
+    Returns
+    -------
+    order_out : array
+        array defining the re-ordering of the input map to obtain a map with
+        nside_out
+    """
+
+    assert hp.isnsideok(nside_in, nest=True), \
+        'invalid input nside {0} in call to dgrade'.format(nside_in)
+
+    assert hp.isnsideok(nside_out, nest=True), \
+        'invalid output nside {0} in call to dgrade'.format(nside_out)
+
+    assert nside_out > nside_in
+    try:
+        return __read_upgrade_cache(nside_in, nside_out)
+    except FileNotFoundError:
+        indx_in = np.arange(hp.nside2npix(nside_in))
+        result = hp.ud_grade(indx_in, nside_out)
+        file_name = upgrade_file_name(nside_in, nside_out)
+        __write_ancillary_file(file_name, result)
+    return result
 
 
 def pixel_1st_neighbours(ipix, nside):
@@ -297,3 +337,19 @@ def __read_dgrade_cache(nside_in, nside_out):
     file_name = dgrade_file_name(nside_in, nside_out)
     with np.load(file_name) as f:
         return f["arr"]
+
+def __read_upgrade_cache(nside_in, nside_out):
+    """Load the array used to to downgrade a map
+
+    Args:
+        * nside_in (int): desired value for the input ``NSIDE``.
+        * nside_out (int): desired value for the output ``NSIDE``.
+
+    Returns:
+        An array containing the requested array.    
+    """
+
+    file_name = upgrade_file_name(nside_in, nside_out)
+    with np.load(file_name) as f:
+        return f["arr"]
+
