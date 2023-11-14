@@ -184,7 +184,7 @@ def DegradeAndConvNeighbours(
     return f
 
 
-def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
+def ConvNeighbours(nside, kernel_size, filters, use_bias=False,kernel_initializer="glorot_uniform",trainable=True):
     """Keras layer to perform pixel neighbour convolution.
 
     Args:
@@ -217,6 +217,7 @@ def ConvNeighbours(nside, kernel_size, filters, use_bias=False, trainable=True):
             kernel_size=kernel_size,
             strides=kernel_size,
             use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
             trainable=trainable,
         )(y)
         return y
